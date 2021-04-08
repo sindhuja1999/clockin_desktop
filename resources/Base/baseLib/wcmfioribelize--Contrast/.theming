@@ -1,0 +1,80 @@
+{
+	"mVersionDependency": {
+		"Base.baseLib.sap_belize_plus": "11.1.22",
+		"Base.baseLib": "11.1.22",
+		"Base": "11.1.22"
+	},
+	"sEntity": "Theme",
+	"sId": "wcmfioribelize--Contrast",
+	"oExtends": "Base.baseLib.sap_belize_plus",
+	"aFiles": [
+		"base",
+		"preview",
+		"css_variables",
+		"custom"
+	],
+	"aBundled": [
+		"wcmfioribelize"
+	],
+	"sBuildOptions": "SKIP",
+	"sType": "ABSTRACT",
+	"sThemability": "PRIVATE",
+	"mData": {
+		"mThemeMasterState": {
+			"mSourceInfo": {
+				"sCreated": "2019-01-22T18:09:36.983Z",
+				"sLastModified": "2020-10-05T17:06:27.432Z",
+				"aVersionHistory": [
+					{
+						"sDate": "2020-10-05T17:04:15.456Z",
+						"mVersion": {
+							"UI5": "1.82.1",
+							"Base": "11.1.22",
+							"UR": "10.30.7.327619.0"
+						}
+					},
+					{
+						"sDate": "2019-11-12T18:49:07.146Z",
+						"mVersion": {
+							"UI5": "1.60.19",
+							"Base": "11.1.14",
+							"UR": "10.30.7.318050.0"
+						}
+					},
+					{
+						"sDate": "2019-10-24T03:34:59.052Z",
+						"mVersion": {
+							"Base": "11.1.14",
+							"UR": "10.30.7.317431.0",
+							"UI5": "1.60.19"
+						}
+					},
+					{
+						"sDate": "2019-01-25T04:16:11.174Z",
+						"mVersion": {
+							"Base": "11.0.22",
+							"UR": "10.30.7.308830.0",
+							"UI5": "1.60.2"
+						}
+					},
+					{
+						"sDate": "2019-01-22T18:27:58.660Z",
+						"mVersion": {
+							"Base": "11.0.22",
+							"UR": "10.30.7.308830.0",
+							"UI5": "1.61.2"
+						}
+					},
+					{
+						"sDate": "2019-01-22T18:09:36.983Z",
+						"mVersion": {
+							"Base": "11.0.22",
+							"UI5": "1.61.2"
+						}
+					}
+				]
+			}
+		}
+	},
+	"sReleaseStage": "GENERAL_AVAILABILITY"
+}

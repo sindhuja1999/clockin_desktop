@@ -1,0 +1,126 @@
+{
+	"mVersionDependency": {
+		"Base.baseLib.sap_belize": "11.1.22",
+		"Base.baseLib": "11.1.22",
+		"Base": "11.1.22"
+	},
+	"sEntity": "Theme",
+	"sId": "wcmfioribelize",
+	"sLabel": "WCM Fiori Theme",
+	"oExtends": "Base.baseLib.sap_belize",
+	"aFiles": [
+		"base",
+		"preview",
+		"css_variables",
+		"custom"
+	],
+	"aBundled": [
+		"wcmfioribelize--Contrast"
+	],
+	"sTextDirections": "LTR",
+	"sType": "STANDARD",
+	"sThemability": "PUBLIC",
+	"mData": {
+		"mThemeMasterState": {
+			"mSourceInfo": {
+				"sCreated": "2019-01-22T18:09:36.983Z",
+				"sLastModified": "2020-10-05T17:06:27.432Z",
+				"aVersionHistory": [
+					{
+						"sDate": "2020-10-05T17:04:15.448Z",
+						"mVersion": {
+							"UI5": "1.82.1",
+							"Base": "11.1.22",
+							"UR": "10.30.7.327619.0"
+						}
+					},
+					{
+						"sDate": "2019-11-12T18:49:07.145Z",
+						"mVersion": {
+							"UI5": "1.60.19",
+							"Base": "11.1.14",
+							"UR": "10.30.7.318050.0"
+						}
+					},
+					{
+						"sDate": "2019-10-24T03:34:59.051Z",
+						"mVersion": {
+							"Base": "11.1.14",
+							"UR": "10.30.7.317431.0",
+							"UI5": "1.60.19"
+						}
+					},
+					{
+						"sDate": "2019-01-25T04:16:11.173Z",
+						"mVersion": {
+							"Base": "11.0.22",
+							"UR": "10.30.7.308830.0",
+							"UI5": "1.60.2"
+						}
+					},
+					{
+						"sDate": "2019-01-22T18:09:36.983Z",
+						"mVersion": {
+							"Base": "11.0.22",
+							"UR": "10.30.7.308830.0",
+							"UI5": "1.61.2"
+						}
+					}
+				]
+			},
+			"mBuildInfo": {
+				"sLastBuilt": "2020-10-05T17:08:20.381Z",
+				"mVersion": {
+					"UI5": "1.82.1",
+					"Base": "11.1.22",
+					"UR": "10.30.7.327619.0"
+				}
+			}
+		}
+	},
+	"sReleaseStage": "GENERAL_AVAILABILITY",
+	"aBadgeParameters": [
+		{
+			"Id": "sapBrandColor",
+			"CssValue": "rgb(207,69,32)",
+			"Label": "Brand Color",
+			"Tags": "Quick,Base,Color"
+		},
+		{
+			"Id": "sapHighlightColor",
+			"CssValue": "rgb(232,119,34)",
+			"Label": "Highlight Color",
+			"Tags": "Quick,Base,Content,Color"
+		},
+		{
+			"Id": "sapBaseColor",
+			"CssValue": "#f7f7f7",
+			"Label": "Base Color",
+			"Tags": "Quick,Base,Color"
+		},
+		{
+			"Id": "sapShellColor",
+			"CssValue": "#cf4520",
+			"Label": "Shell Header Color",
+			"Tags": "Quick,Base,Base,Shell,Color"
+		},
+		{
+			"Id": "sapBackgroundColor",
+			"CssValue": "#fafafa",
+			"Label": "Background Color",
+			"Tags": "Quick,Base,Color"
+		},
+		{
+			"Id": "sapTextColor",
+			"CssValue": "#333333",
+			"Label": "Text Color",
+			"Tags": "Quick,Base,Content,Color,Font"
+		},
+		{
+			"Id": "sapLinkColor",
+			"CssValue": "#0070b1",
+			"Label": "Link Color",
+			"Tags": "Quick,Base,Content,Color,Font,Link"
+		}
+	]
+}
