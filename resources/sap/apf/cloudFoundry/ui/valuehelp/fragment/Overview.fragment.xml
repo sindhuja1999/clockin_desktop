@@ -1,0 +1,65 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:l="sap.ui.layout"
+    xmlns:f="sap.ui.layout.form"
+    xmlns:core="sap.ui.core" >
+
+    <ScrollContainer horizontal="false" vertical="true" height="100%">
+        <f:SimpleForm id="destinationOverview"
+            editable="false"
+            layout="ResponsiveGridLayout"
+            labelSpanXL="3"
+            labelSpanL="3"
+            labelSpanM="3"
+            labelSpanS="12"
+            adjustLabelSpan="false"
+            columnsXL="1"
+            columnsL="1"
+            columnsM="1"
+            singleContainerFullSize="false" >
+            <Title text="{value: 'selectedDestination', formatter: '.translate'}" />
+            <f:content>
+                <Label id="destinationOverviewName" text="{value: 'destinationName', formatter: '.translate'}" />
+                <Text text="{destinations>name}" />
+                <Label id="destinationOverviewDescription" text="{value: 'destinationDescription', formatter: '.translate'}" />
+                <Text text="{destinations>description}" />
+                <Label id="destinationOverviewProxyType" text="{value: 'destinationProxyType', formatter: '.translate'}" />
+                <Text text="{path: 'destinations>proxyType', formatter: '.proxyTypeText'}" />
+                <Label id="destinationOverviewUrl" text="{value: 'url', formatter: '.translate'}" />
+                <Text text="{destinations>url}" />
+            </f:content>
+        </f:SimpleForm>
+        <f:SimpleForm id="serviceOverview"
+            editable="false"
+            layout="ResponsiveGridLayout"
+            labelSpanXL="3"
+            labelSpanL="3"
+            labelSpanM="3"
+            labelSpanS="12"
+            adjustLabelSpan="false"
+            columnsXL="1"
+            columnsL="1"
+            columnsM="1"
+            singleContainerFullSize="false" >
+            <Title text="{value: 'selectedService', formatter: '.translate'}" />
+            <f:content>
+                <Label id="serviceOverviewTechnicalServiceName" text="{value: 'technicalServiceName', formatter: '.translate'}" />
+                <Text text="{catalog>TechnicalServiceName}" />
+                <Label id="serviceOverviewUrl" text="{value: 'url', formatter: '.translate'}" />
+                <Text text="{path: 'catalog>ServiceUrl', formatter: '.getRelativeServiceURL'}" />
+                <Label id="serviceOverviewDescription" text="{value: 'description', formatter: '.translate'}" />
+                <Text text="{catalog>Description}" />
+                <Label id="serviceOverviewUpdatedDate" text="{value: 'updatedDate', formatter: '.translate'}" />
+                <Text text="{path: 'catalog>UpdatedDate', type: 'sap.ui.model.type.DateTime'}" />
+                <Label id="serviceOverviewTechnicalServiceVersion" text="{value: 'technicalServiceVersion', formatter: '.translate'}" />
+                <Text text="{path: 'catalog>TechnicalServiceVersion'}" />
+                <Label id="serviceOverviewStatus" text="{value: 'serviceStatus', formatter: '.translate'}" />
+                <ObjectStatus
+                    icon="{path: 'ui>/ServiceStatus', formatter: '.serviceStatusIcon'}"
+                    state="{path: 'ui>/ServiceStatus', formatter: '.serviceStatusState'}"
+                    text="{path: 'ui>/ServiceStatus', formatter: '.serviceStatusText'}" />
+            </f:content>
+        </f:SimpleForm>
+    </ScrollContainer>
+
+</core:FragmentDefinition>

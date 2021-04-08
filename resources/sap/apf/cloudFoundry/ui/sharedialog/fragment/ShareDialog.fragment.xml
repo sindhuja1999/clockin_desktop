@@ -1,0 +1,59 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:l="sap.ui.layout"
+	xmlns:f="sap.ui.layout.form"
+	xmlns:core="sap.ui.core" >
+	<Dialog id="shareDialog" title="{value: 'shareConfiguration', formatter: '.translate'}" contentWidth="750px" >
+		<content>
+			<FlexBox direction="Column" >
+				<FlexBox alignItems="Center" justifyContent="Center" >
+					<items>
+						<FlexBox alignItems="Center" justifyContent="Center" >
+							<layoutData>
+								<FlexItemData growFactor="1" />
+							</layoutData>
+							<GenericTile id="tilePreview" header="{path: 'ui>/TileHeader'}" subheader="{path: 'ui>/TileSubheader'}" tooltip="{path: 'ui>/TileTooltip'}" >
+								<TileContent>
+									<ImageContent id="tileImage" src="{path: 'ui>/TileIcon'}" />
+								</TileContent>
+							</GenericTile>
+						</FlexBox>
+						<FlexBox alignItems="Center" justifyContent="Start" >
+						<layoutData>
+							<FlexItemData growFactor="1" />
+						</layoutData>
+						<f:SimpleForm id="formTile"
+							editable="true"
+							layout="ResponsiveGridLayout"
+							labelSpanXL="3"
+							labelSpanL="3"
+							labelSpanM="3"
+							labelSpanS="3"
+							width="400px" >
+							<f:content>
+								<Label id="labelHeader" text="{value: 'bookmarkHeader', formatter: '.translate'}" labelFor="inputHeader" />
+								<Input id="inputHeader" placeholder="{path: 'ui>/TileHeaderDefault'}" liveChange="onHeaderChange" />
+								<Label id="labelSubheader" text="{value: 'bookmarkSubheader', formatter: '.translate'}" labelFor="inputSubheader" />
+								<Input id="inputSubheader" placeholder="{value: 'bookmarkSubheaderDefault', formatter: '.translate'}" liveChange="onSubheaderChange" />
+								<Label id="labelIcon" text="{value: 'bookmarkIcon', formatter: '.translate'}" labelFor="inputIcon" />
+								<Input id="inputIcon" change="onIconChange" valueState="{path: 'ui>/TileIconValueState'}" valueStateText="{value: 'bookmarkIconInvalid', formatter: '.translate'}" />
+								<Label id="labelGroup" text="{value: 'bookmarkGroup', formatter: '.translate'}" labelFor="inputGroup" />
+								<Input id="inputGroup" liveChange="onGroupChange" />
+							</f:content>
+						</f:SimpleForm>
+						</FlexBox>
+					</items>
+				</FlexBox>
+				<FlexBox justifyContent="Center" >
+					<Button id="buttonLink" text="{value: 'showLink', formatter: '.translate'}" type="Transparent" icon="sap-icon://copy" press="onShowLink" class="sapUiMediumMarginEnd" tooltip="{value: 'showLinkTooltip', formatter: '.translate'}" />
+					<Button id="buttonEmail" text="{value: 'sendInEmail', formatter: '.translate'}" type="Transparent" icon="sap-icon://email" press="onSendEmail" class="sapUiMediumMarginEnd" tooltip="{value: 'sendInEmailTooltip', formatter: '.translate'}" />
+					<Button id="buttonFavorite" text="{value: 'markAsFavorite', formatter: '.translate'}" type="Transparent" icon="sap-icon://add-favorite" press="onMarkFavorite" class="sapUiMediumMarginEnd" tooltip="{value: 'markAsFavoriteTooltip', formatter: '.translate'}" />
+				</FlexBox>
+				<Input id="inputCopy" editable="false" visible="false" />
+			</FlexBox>
+		</content>
+		<buttons>
+			<Button id="buttonClose" text="{value: 'close', formatter: '.translate'}" press="onClose" />
+		</buttons>
+	</Dialog>
+</core:FragmentDefinition>

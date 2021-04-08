@@ -1,0 +1,109 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+	xmlns:l="sap.ui.layout"
+	xmlns:f="sap.ui.layout.form"
+    xmlns:core="sap.ui.core" >
+    <Dialog
+        id="catalogBrowser"
+        title="{path: 'ui>/Title'}"
+        contentWidth="60%"
+        contentHeight="1000px">
+        <subHeader>
+            <Bar visible="{path: 'ui>/SearchEnabled'}">
+                <contentMiddle>
+                    <SearchField 
+                        id="searchField"
+                        liveChange="onLiveChangeSearch"
+                        search="onSearch" />
+                </contentMiddle>
+            </Bar>
+        </subHeader>
+        <content>
+            <NavContainer
+                id="navContainer">
+                <ScrollContainer horizontal="false" vertical="true" height="100%">
+                    <List
+                        id="selectDestination"
+                        items="{destinations>/destinations}">
+                        <items>
+                            <StandardListItem
+                                title="{destinations>name}"
+                                description="{destinations>description}"
+                                info="{destinations>url}"
+                                icon="{path: 'destinations>proxyType', formatter: '.proxyTypeIcon'}"
+                                adaptTitleSize="false"
+                                type="Navigation"
+                                press="onSelectDestination" />
+                        </items>
+                    </List>
+                </ScrollContainer>
+                <ScrollContainer horizontal="false" vertical="true" height="100%">
+                    <Table id="selectService"
+                        fixedLayout="false"
+                        sticky="ColumnHeaders"
+                        inset="false"
+                        items="{
+                            path: 'catalog>/ServiceCollection',
+                            sorter: { path: 'TechnicalServiceName', descending: false }
+                        }">
+                        <columns>
+                            <Column>
+                                <Text id="columnTextTechnicalServiceName" text="{value: 'technicalServiceName', formatter: '.translate'}" />
+                            </Column>
+                            <Column
+                                minScreenWidth="Tablet"
+                                demandPopin="true">
+                                <Text id="columnTextUrl" text="{value: 'url', formatter: '.translate'}" />
+                            </Column>
+                        </columns>
+                        <items>
+                            <ColumnListItem type="Navigation" press="onSelectService" vAlign="Middle">
+                                <cells>
+                                    <ObjectIdentifier
+                                        title="{catalog>TechnicalServiceName}"
+                                        text="{catalog>Description}"/>
+                                    <Text
+                                        text="{path: 'catalog>ServiceUrl', formatter: '.getRelativeServiceURL'}" />
+                                </cells>
+                            </ColumnListItem>
+                        </items>
+                    </Table>
+                </ScrollContainer>
+                <ScrollContainer horizontal="false" vertical="true" height="100%">
+                    <f:SimpleForm id="urlInputForm"
+                        editable="true"
+                        layout="ResponsiveGridLayout"
+                        labelSpanXL="1"
+                        labelSpanL="1"
+                        labelSpanM="1"
+                        labelSpanS="12"
+                        adjustLabelSpan="false"
+                        columnsXL="1"
+                        columnsL="1"
+                        columnsM="1"
+                        singleContainerFullSize="false" >
+                        <f:content>
+                            <Label text="{value: 'url', formatter: '.translate'}" />
+                            <ComboBox id="urlInput"
+                                placeholder="{value: 'serviceURLExample', formatter: '.translate'}"
+                                valueState="{path: 'ui>/ServiceUrlValueState'}"
+                                valueStateText="{value: 'serviceURLFormatWarning', formatter: '.translate'}"
+                                showButton="false" />
+                            <Label />
+                        </f:content>
+                    </f:SimpleForm>
+                </ScrollContainer>
+                <core:Fragment fragmentName="sap.apf.cloudFoundry.ui.valuehelp.fragment.Overview" type="XML" />
+                <core:Fragment fragmentName="sap.apf.cloudFoundry.ui.valuehelp.fragment.OverviewReduced" type="XML" />
+                <core:Fragment fragmentName="sap.apf.cloudFoundry.ui.valuehelp.fragment.OverviewServiceOnly" type="XML" />
+            </NavContainer>
+        </content>
+
+        <buttons>
+            <Button id="buttonOk" text="{value: 'ok', formatter: '.translate'}" visible="{ui>/ButtonOkEnabled}" press="onOk" type="Emphasized" />
+            <Button id="buttonSelect" text="{value: 'select', formatter: '.translate'}" visible="{ui>/ButtonSelectEnabled}" press="onSelectServiceUrl" />
+            <Button id="buttonBack" text="{value: 'back', formatter: '.translate'}" visible="{ui>/ButtonBackEnabled}" press="onBack" />
+            <Button id="buttonCancel" text="{value: 'cancel', formatter: '.translate'}" press="onCancel" />
+        </buttons>
+    </Dialog>
+</core:FragmentDefinition>

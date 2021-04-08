@@ -1,0 +1,1121 @@
+{
+	"_version": "1.1.0",
+	"resources": [
+		{
+			"name": "Component-dbg.js",
+			"size": 5811,
+			"isDebug": true
+		},
+		{
+			"name": "Component.js",
+			"size": 3002
+		},
+		{
+			"name": "core/applicationHandler-dbg.js",
+			"size": 7213,
+			"isDebug": true
+		},
+		{
+			"name": "core/applicationHandler.js",
+			"size": 2023
+		},
+		{
+			"name": "core/configurationEditor-dbg.js",
+			"size": 53196,
+			"isDebug": true
+		},
+		{
+			"name": "core/configurationEditor.js",
+			"size": 13294
+		},
+		{
+			"name": "core/configurationHandler-dbg.js",
+			"size": 17000,
+			"isDebug": true
+		},
+		{
+			"name": "core/configurationHandler.js",
+			"size": 4804
+		},
+		{
+			"name": "core/configurationObjects-dbg.js",
+			"size": 49246,
+			"isDebug": true
+		},
+		{
+			"name": "core/configurationObjects.js",
+			"size": 19233
+		},
+		{
+			"name": "core/elementContainer-dbg.js",
+			"size": 11527,
+			"isDebug": true
+		},
+		{
+			"name": "core/elementContainer.js",
+			"size": 3091
+		},
+		{
+			"name": "core/facetFilter-dbg.js",
+			"size": 19393,
+			"isDebug": true
+		},
+		{
+			"name": "core/facetFilter.js",
+			"size": 4967
+		},
+		{
+			"name": "core/hierarchicalStep-dbg.js",
+			"size": 5232,
+			"isDebug": true
+		},
+		{
+			"name": "core/hierarchicalStep.js",
+			"size": 1577
+		},
+		{
+			"name": "core/instance-dbg.js",
+			"size": 46521,
+			"isDebug": true
+		},
+		{
+			"name": "core/instance.js",
+			"size": 19366
+		},
+		{
+			"name": "core/lazyLoader-dbg.js",
+			"size": 5454,
+			"isDebug": true
+		},
+		{
+			"name": "core/lazyLoader.js",
+			"size": 1492
+		},
+		{
+			"name": "core/messageDefinition-dbg.js",
+			"size": 6128,
+			"isDebug": true
+		},
+		{
+			"name": "core/messageDefinition.js",
+			"size": 5342
+		},
+		{
+			"name": "core/navigationTarget-dbg.js",
+			"size": 11056,
+			"isDebug": true
+		},
+		{
+			"name": "core/navigationTarget.js",
+			"size": 2310
+		},
+		{
+			"name": "core/registryWrapper-dbg.js",
+			"size": 3312,
+			"isDebug": true
+		},
+		{
+			"name": "core/registryWrapper.js",
+			"size": 741
+		},
+		{
+			"name": "core/representation-dbg.js",
+			"size": 26733,
+			"isDebug": true
+		},
+		{
+			"name": "core/representation.js",
+			"size": 5561
+		},
+		{
+			"name": "core/smartFilterBar-dbg.js",
+			"size": 1631,
+			"isDebug": true
+		},
+		{
+			"name": "core/smartFilterBar.js",
+			"size": 496
+		},
+		{
+			"name": "core/step-dbg.js",
+			"size": 35634,
+			"isDebug": true
+		},
+		{
+			"name": "core/step.js",
+			"size": 8567
+		},
+		{
+			"name": "core/textHandler-dbg.js",
+			"size": 1677,
+			"isDebug": true
+		},
+		{
+			"name": "core/textHandler.js",
+			"size": 611
+		},
+		{
+			"name": "core/textPool-dbg.js",
+			"size": 12848,
+			"isDebug": true
+		},
+		{
+			"name": "core/textPool.js",
+			"size": 4717
+		},
+		{
+			"name": "manifest.json",
+			"size": 3584
+		},
+		{
+			"name": "resources/css/configModeler.css",
+			"size": 4590
+		},
+		{
+			"name": "resources/i18n/texts.properties",
+			"size": 16410,
+			"locale": "",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_ar.properties",
+			"size": 42775,
+			"locale": "ar",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_bg.properties",
+			"size": 56318,
+			"locale": "bg",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_ca.properties",
+			"size": 18570,
+			"locale": "ca",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_cs.properties",
+			"size": 19133,
+			"locale": "cs",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_da.properties",
+			"size": 16153,
+			"locale": "da",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_de.properties",
+			"size": 17530,
+			"locale": "de",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_el.properties",
+			"size": 56468,
+			"locale": "el",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_en.properties",
+			"size": 15812,
+			"locale": "en",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_en_US_sappsd.properties",
+			"size": 67407,
+			"locale": "en_US_sappsd",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_en_US_saptrc.properties",
+			"size": 22028,
+			"locale": "en_US_saptrc",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_es.properties",
+			"size": 18521,
+			"locale": "es",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_et.properties",
+			"size": 16822,
+			"locale": "et",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_fi.properties",
+			"size": 17000,
+			"locale": "fi",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_fr.properties",
+			"size": 19186,
+			"locale": "fr",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_hi.properties",
+			"size": 50812,
+			"locale": "hi",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_hr.properties",
+			"size": 16916,
+			"locale": "hr",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_hu.properties",
+			"size": 21311,
+			"locale": "hu",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_it.properties",
+			"size": 17501,
+			"locale": "it",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_iw.properties",
+			"size": 38670,
+			"locale": "iw",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_ja.properties",
+			"size": 31466,
+			"locale": "ja",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_kk.properties",
+			"size": 52067,
+			"locale": "kk",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_ko.properties",
+			"size": 25873,
+			"locale": "ko",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_lt.properties",
+			"size": 18910,
+			"locale": "lt",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_lv.properties",
+			"size": 20074,
+			"locale": "lv",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_ms.properties",
+			"size": 15715,
+			"locale": "ms",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_nl.properties",
+			"size": 15299,
+			"locale": "nl",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_no.properties",
+			"size": 16112,
+			"locale": "no",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_pl.properties",
+			"size": 18827,
+			"locale": "pl",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_pt.properties",
+			"size": 19144,
+			"locale": "pt",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_ro.properties",
+			"size": 18689,
+			"locale": "ro",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_ru.properties",
+			"size": 53971,
+			"locale": "ru",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_sh.properties",
+			"size": 16763,
+			"locale": "sh",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_sk.properties",
+			"size": 19342,
+			"locale": "sk",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_sl.properties",
+			"size": 16776,
+			"locale": "sl",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_sv.properties",
+			"size": 16604,
+			"locale": "sv",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_th.properties",
+			"size": 52969,
+			"locale": "th",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_tr.properties",
+			"size": 19716,
+			"locale": "tr",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_uk.properties",
+			"size": 53646,
+			"locale": "uk",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_vi.properties",
+			"size": 28774,
+			"locale": "vi",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_zh_CN.properties",
+			"size": 21019,
+			"locale": "zh_CN",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "resources/i18n/texts_zh_TW.properties",
+			"size": 20904,
+			"locale": "zh_TW",
+			"raw": "resources/i18n/texts.properties"
+		},
+		{
+			"name": "ui/controller/applicationList-dbg.controller.js",
+			"size": 17134,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/applicationList.controller.js",
+			"size": 9976
+		},
+		{
+			"name": "ui/controller/catalogService-dbg.controller.js",
+			"size": 3607,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/catalogService.controller.js",
+			"size": 1596
+		},
+		{
+			"name": "ui/controller/category-dbg.controller.js",
+			"size": 6393,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/category.controller.js",
+			"size": 2753
+		},
+		{
+			"name": "ui/controller/configuration-dbg.controller.js",
+			"size": 11337,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/configuration.controller.js",
+			"size": 5873
+		},
+		{
+			"name": "ui/controller/configurationList-dbg.controller.js",
+			"size": 123437,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/configurationList.controller.js",
+			"size": 59387
+		},
+		{
+			"name": "ui/controller/cornerTexts-dbg.js",
+			"size": 5004,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/cornerTexts.js",
+			"size": 2309
+		},
+		{
+			"name": "ui/controller/editApplication-dbg.controller.js",
+			"size": 4293,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/editApplication.controller.js",
+			"size": 2497
+		},
+		{
+			"name": "ui/controller/facetFilter-dbg.controller.js",
+			"size": 34668,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/facetFilter.controller.js",
+			"size": 16743
+		},
+		{
+			"name": "ui/controller/facetFilterFRR-dbg.controller.js",
+			"size": 5200,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/facetFilterFRR.controller.js",
+			"size": 2623
+		},
+		{
+			"name": "ui/controller/facetFilterVHR-dbg.controller.js",
+			"size": 8516,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/facetFilterVHR.controller.js",
+			"size": 4798
+		},
+		{
+			"name": "ui/controller/hierarchicalStepRequest-dbg.controller.js",
+			"size": 9201,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/hierarchicalStepRequest.controller.js",
+			"size": 4755
+		},
+		{
+			"name": "ui/controller/importDeliveredContent-dbg.controller.js",
+			"size": 5610,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/importDeliveredContent.controller.js",
+			"size": 3026
+		},
+		{
+			"name": "ui/controller/importFiles-dbg.controller.js",
+			"size": 8734,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/importFiles.controller.js",
+			"size": 4094
+		},
+		{
+			"name": "ui/controller/messageHandler-dbg.controller.js",
+			"size": 4495,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/messageHandler.controller.js",
+			"size": 2231
+		},
+		{
+			"name": "ui/controller/navTargetContextMapping-dbg.controller.js",
+			"size": 4259,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/navTargetContextMapping.controller.js",
+			"size": 2885
+		},
+		{
+			"name": "ui/controller/navigationTarget-dbg.controller.js",
+			"size": 21285,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/navigationTarget.controller.js",
+			"size": 9927
+		},
+		{
+			"name": "ui/controller/navigationTargetParameter-dbg.controller.js",
+			"size": 5412,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/navigationTargetParameter.controller.js",
+			"size": 3307
+		},
+		{
+			"name": "ui/controller/newApplication-dbg.controller.js",
+			"size": 3672,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/newApplication.controller.js",
+			"size": 2053
+		},
+		{
+			"name": "ui/controller/overwriteExistingConfiguration-dbg.js",
+			"size": 4145,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/overwriteExistingConfiguration.js",
+			"size": 3029
+		},
+		{
+			"name": "ui/controller/previewContent-dbg.controller.js",
+			"size": 12295,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/previewContent.controller.js",
+			"size": 5481
+		},
+		{
+			"name": "ui/controller/propertyType-dbg.js",
+			"size": 24091,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/propertyType.js",
+			"size": 9726
+		},
+		{
+			"name": "ui/controller/propertyTypeHandler-dbg.controller.js",
+			"size": 10876,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/propertyTypeHandler.controller.js",
+			"size": 4514
+		},
+		{
+			"name": "ui/controller/representation-dbg.controller.js",
+			"size": 23141,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/representation.controller.js",
+			"size": 9471
+		},
+		{
+			"name": "ui/controller/representationCornerTexts-dbg.controller.js",
+			"size": 4178,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/representationCornerTexts.controller.js",
+			"size": 2047
+		},
+		{
+			"name": "ui/controller/representationDimension-dbg.controller.js",
+			"size": 9951,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/representationDimension.controller.js",
+			"size": 5168
+		},
+		{
+			"name": "ui/controller/representationHierarchyProperty-dbg.controller.js",
+			"size": 5808,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/representationHierarchyProperty.controller.js",
+			"size": 3068
+		},
+		{
+			"name": "ui/controller/representationLegend-dbg.controller.js",
+			"size": 5047,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/representationLegend.controller.js",
+			"size": 2849
+		},
+		{
+			"name": "ui/controller/representationMeasure-dbg.controller.js",
+			"size": 7852,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/representationMeasure.controller.js",
+			"size": 4364
+		},
+		{
+			"name": "ui/controller/representationProperty-dbg.controller.js",
+			"size": 5087,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/representationProperty.controller.js",
+			"size": 2983
+		},
+		{
+			"name": "ui/controller/representationSortPropertyType-dbg.controller.js",
+			"size": 4188,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/representationSortPropertyType.controller.js",
+			"size": 2663
+		},
+		{
+			"name": "ui/controller/requestOptions-dbg.js",
+			"size": 21904,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/requestOptions.js",
+			"size": 10663
+		},
+		{
+			"name": "ui/controller/smartFilterBar-dbg.controller.js",
+			"size": 3124,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/smartFilterBar.controller.js",
+			"size": 1160
+		},
+		{
+			"name": "ui/controller/smartFilterBarRequest-dbg.controller.js",
+			"size": 3002,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/smartFilterBarRequest.controller.js",
+			"size": 1597
+		},
+		{
+			"name": "ui/controller/sortPropertyType-dbg.js",
+			"size": 12003,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/sortPropertyType.js",
+			"size": 5422
+		},
+		{
+			"name": "ui/controller/step-dbg.controller.js",
+			"size": 27533,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/step.controller.js",
+			"size": 13176
+		},
+		{
+			"name": "ui/controller/stepCornerTexts-dbg.controller.js",
+			"size": 2514,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/stepCornerTexts.controller.js",
+			"size": 1389
+		},
+		{
+			"name": "ui/controller/stepFilterMapping-dbg.controller.js",
+			"size": 13928,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/stepFilterMapping.controller.js",
+			"size": 8284
+		},
+		{
+			"name": "ui/controller/stepRequest-dbg.controller.js",
+			"size": 16000,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/stepRequest.controller.js",
+			"size": 9389
+		},
+		{
+			"name": "ui/controller/stepSortPropertyType-dbg.controller.js",
+			"size": 3142,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/stepSortPropertyType.controller.js",
+			"size": 1919
+		},
+		{
+			"name": "ui/controller/titleBreadCrumb-dbg.controller.js",
+			"size": 553,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/titleBreadCrumb.controller.js",
+			"size": 277
+		},
+		{
+			"name": "ui/controller/toolbar-dbg.controller.js",
+			"size": 49391,
+			"isDebug": true
+		},
+		{
+			"name": "ui/controller/toolbar.controller.js",
+			"size": 24604
+		},
+		{
+			"name": "ui/fragment/addMenu.fragment.xml",
+			"size": 918
+		},
+		{
+			"name": "ui/fragment/deleteConfirmationDialog.fragment.xml",
+			"size": 505
+		},
+		{
+			"name": "ui/fragment/dialogWithTwoButtons.fragment.xml",
+			"size": 600
+		},
+		{
+			"name": "ui/fragment/existingStepDialog.fragment.xml",
+			"size": 469
+		},
+		{
+			"name": "ui/fragment/exportConfiguration.fragment.xml",
+			"size": 744
+		},
+		{
+			"name": "ui/fragment/mandatoryDialog.fragment.xml",
+			"size": 746
+		},
+		{
+			"name": "ui/fragment/overwriteConfirmation.fragment.xml",
+			"size": 1357
+		},
+		{
+			"name": "ui/fragment/textpoolCleanupConfirmationDialog.fragment.xml",
+			"size": 567
+		},
+		{
+			"name": "ui/fragment/unsavedDataConfirmationDialog.fragment.xml",
+			"size": 586
+		},
+		{
+			"name": "ui/utils/APFRouter-dbg.js",
+			"size": 5716,
+			"isDebug": true
+		},
+		{
+			"name": "ui/utils/APFRouter.js",
+			"size": 2587
+		},
+		{
+			"name": "ui/utils/APFTree-dbg.js",
+			"size": 34082,
+			"isDebug": true
+		},
+		{
+			"name": "ui/utils/APFTree.js",
+			"size": 13816
+		},
+		{
+			"name": "ui/utils/constants-dbg.js",
+			"size": 2767,
+			"isDebug": true
+		},
+		{
+			"name": "ui/utils/constants.js",
+			"size": 2215
+		},
+		{
+			"name": "ui/utils/displayOptionsValueBuilder-dbg.js",
+			"size": 2231,
+			"isDebug": true
+		},
+		{
+			"name": "ui/utils/displayOptionsValueBuilder.js",
+			"size": 1602
+		},
+		{
+			"name": "ui/utils/helper-dbg.js",
+			"size": 418,
+			"isDebug": true
+		},
+		{
+			"name": "ui/utils/helper.js",
+			"size": 239
+		},
+		{
+			"name": "ui/utils/labelForRepresentationTypes-dbg.js",
+			"size": 3637,
+			"isDebug": true
+		},
+		{
+			"name": "ui/utils/labelForRepresentationTypes.js",
+			"size": 2489
+		},
+		{
+			"name": "ui/utils/navigationHandler-dbg.js",
+			"size": 10470,
+			"isDebug": true
+		},
+		{
+			"name": "ui/utils/navigationHandler.js",
+			"size": 3691
+		},
+		{
+			"name": "ui/utils/nullObjectChecker-dbg.js",
+			"size": 1556,
+			"isDebug": true
+		},
+		{
+			"name": "ui/utils/nullObjectChecker.js",
+			"size": 942
+		},
+		{
+			"name": "ui/utils/optionsValueModelBuilder-dbg.js",
+			"size": 2030,
+			"isDebug": true
+		},
+		{
+			"name": "ui/utils/optionsValueModelBuilder.js",
+			"size": 668
+		},
+		{
+			"name": "ui/utils/propertyTypeFactory-dbg.js",
+			"size": 2606,
+			"isDebug": true
+		},
+		{
+			"name": "ui/utils/propertyTypeFactory.js",
+			"size": 1627
+		},
+		{
+			"name": "ui/utils/propertyTypeOrchestration-dbg.js",
+			"size": 17712,
+			"isDebug": true
+		},
+		{
+			"name": "ui/utils/propertyTypeOrchestration.js",
+			"size": 5946
+		},
+		{
+			"name": "ui/utils/propertyTypeState-dbg.js",
+			"size": 3181,
+			"isDebug": true
+		},
+		{
+			"name": "ui/utils/propertyTypeState.js",
+			"size": 2011
+		},
+		{
+			"name": "ui/utils/representationBasicDataHandler-dbg.js",
+			"size": 9005,
+			"isDebug": true
+		},
+		{
+			"name": "ui/utils/representationBasicDataHandler.js",
+			"size": 3479
+		},
+		{
+			"name": "ui/utils/representationHandler-dbg.js",
+			"size": 5688,
+			"isDebug": true
+		},
+		{
+			"name": "ui/utils/representationHandler.js",
+			"size": 2798
+		},
+		{
+			"name": "ui/utils/sortDataHandler-dbg.js",
+			"size": 3683,
+			"isDebug": true
+		},
+		{
+			"name": "ui/utils/sortDataHandler.js",
+			"size": 1984
+		},
+		{
+			"name": "ui/utils/staticValuesBuilder-dbg.js",
+			"size": 1752,
+			"isDebug": true
+		},
+		{
+			"name": "ui/utils/staticValuesBuilder.js",
+			"size": 787
+		},
+		{
+			"name": "ui/utils/stepPropertyMetadataHandler-dbg.js",
+			"size": 4433,
+			"isDebug": true
+		},
+		{
+			"name": "ui/utils/stepPropertyMetadataHandler.js",
+			"size": 2060
+		},
+		{
+			"name": "ui/utils/textManipulator-dbg.js",
+			"size": 1478,
+			"isDebug": true
+		},
+		{
+			"name": "ui/utils/textManipulator.js",
+			"size": 401
+		},
+		{
+			"name": "ui/utils/textPoolHelper-dbg.js",
+			"size": 3433,
+			"isDebug": true
+		},
+		{
+			"name": "ui/utils/textPoolHelper.js",
+			"size": 1852
+		},
+		{
+			"name": "ui/utils/treeTableDisplayOptionsValueBuilder-dbg.js",
+			"size": 1705,
+			"isDebug": true
+		},
+		{
+			"name": "ui/utils/treeTableDisplayOptionsValueBuilder.js",
+			"size": 1285
+		},
+		{
+			"name": "ui/utils/viewValidator-dbg.js",
+			"size": 5953,
+			"isDebug": true
+		},
+		{
+			"name": "ui/utils/viewValidator.js",
+			"size": 2417
+		},
+		{
+			"name": "ui/view/application.view.xml",
+			"size": 184
+		},
+		{
+			"name": "ui/view/applicationList.view.xml",
+			"size": 3582
+		},
+		{
+			"name": "ui/view/catalogService.view.xml",
+			"size": 550
+		},
+		{
+			"name": "ui/view/category.view.xml",
+			"size": 1348
+		},
+		{
+			"name": "ui/view/configuration.view.xml",
+			"size": 2600
+		},
+		{
+			"name": "ui/view/configurationList.view.xml",
+			"size": 2406
+		},
+		{
+			"name": "ui/view/cornerTexts.view.xml",
+			"size": 3076
+		},
+		{
+			"name": "ui/view/editApplication.view.xml",
+			"size": 1125
+		},
+		{
+			"name": "ui/view/facetFilter.view.xml",
+			"size": 5973
+		},
+		{
+			"name": "ui/view/importDeliveredContent.view.xml",
+			"size": 1300
+		},
+		{
+			"name": "ui/view/importFiles.view.xml",
+			"size": 1620
+		},
+		{
+			"name": "ui/view/messageHandler.view.xml",
+			"size": 140
+		},
+		{
+			"name": "ui/view/navigationTarget.view.xml",
+			"size": 3761
+		},
+		{
+			"name": "ui/view/navigationTargetParameter.view.xml",
+			"size": 1643
+		},
+		{
+			"name": "ui/view/newApplication.view.xml",
+			"size": 1287
+		},
+		{
+			"name": "ui/view/previewContent.view.xml",
+			"size": 1011
+		},
+		{
+			"name": "ui/view/propertyType.view.xml",
+			"size": 2569
+		},
+		{
+			"name": "ui/view/propertyTypeHandler.view.xml",
+			"size": 252
+		},
+		{
+			"name": "ui/view/representation.view.xml",
+			"size": 3215
+		},
+		{
+			"name": "ui/view/requestOptions.view.xml",
+			"size": 2711
+		},
+		{
+			"name": "ui/view/smartFilterBar.view.xml",
+			"size": 497
+		},
+		{
+			"name": "ui/view/sortPropertyType.view.xml",
+			"size": 2217
+		},
+		{
+			"name": "ui/view/step.view.xml",
+			"size": 5459
+		},
+		{
+			"name": "ui/view/titleBreadCrumb.view.xml",
+			"size": 677
+		},
+		{
+			"name": "ui/view/toolbar.view.xml",
+			"size": 1559
+		}
+	]
+}

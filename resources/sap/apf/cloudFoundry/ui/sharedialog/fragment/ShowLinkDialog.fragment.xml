@@ -1,0 +1,19 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core">
+	<Dialog
+		id="showLinkDialog"
+		title="{value: 'configurationLink', formatter: '.translate'}"
+		type="Message"
+		state="None"
+		beforeOpen=".onBeforeOpen"
+		afterOpen=".onAfterOpen"
+		afterClose=".onAfterClose">
+		<content>
+			<TextArea id="textAreaLink" width="100%" editable="false" growing="true"/>
+		</content>
+		<endButton>
+			<Button id="buttonCloseLinkDialog" text="{value: 'close', formatter: '.translate'}" press=".onButtonClosePress"/>
+		</endButton>
+	</Dialog>
+</core:FragmentDefinition>

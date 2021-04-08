@@ -1,0 +1,6 @@
+<mvc:View
+    controllerName="sap.apf.cloudFoundry.ui.valuehelp.controller.CatalogBrowser"
+    xmlns="sap.m"
+    xmlns:mvc="sap.ui.core.mvc">
+   
+</mvc:View>

@@ -1,0 +1,39 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:l="sap.ui.layout"
+    xmlns:f="sap.ui.layout.form"
+    xmlns:core="sap.ui.core" >
+
+    <ScrollContainer horizontal="false" vertical="true" height="100%">
+        <MessageStrip text="{value: 'directServiceDestination', formatter: '.translate'}" type="Information" showIcon="true" class="sapUiSmallMargin" />
+        <f:SimpleForm id="serviceOnlyOverview"
+            editable="false"
+            layout="ResponsiveGridLayout"
+            labelSpanXL="3"
+            labelSpanL="3"
+            labelSpanM="3"
+            labelSpanS="12"
+            adjustLabelSpan="false"
+            columnsXL="1"
+            columnsL="1"
+            columnsM="1"
+            singleContainerFullSize="false" >
+            <f:content>
+                <Label id="serviceOnlyOverviewName" text="{value: 'destinationName', formatter: '.translate'}" />
+                <Text text="{destinations>name}" />
+                <Label id="serviceOnlyOverviewDescription" text="{value: 'destinationDescription', formatter: '.translate'}" />
+                <Text text="{destinations>description}" />
+                <Label id="serviceOnlyOverviewProxyType" text="{value: 'destinationProxyType', formatter: '.translate'}" />
+                <Text text="{path: 'destinations>proxyType', formatter: '.proxyTypeText'}" />
+                <Label id="serviceOnlyOverviewUrl" text="{value: 'url', formatter: '.translate'}" />
+                <Text text="{destinations>url}" />
+                <Label id="serviceOnlyOverviewStatus" text="{value: 'serviceStatus', formatter: '.translate'}" />
+                <ObjectStatus
+                    icon="{path: 'ui>/ServiceStatus', formatter: '.serviceStatusIcon'}"
+                    state="{path: 'ui>/ServiceStatus', formatter: '.serviceStatusState'}"
+                    text="{path: 'ui>/ServiceStatus', formatter: '.serviceStatusText'}" />
+            </f:content>
+        </f:SimpleForm>
+    </ScrollContainer>
+
+</core:FragmentDefinition>

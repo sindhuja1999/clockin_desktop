@@ -1,0 +1,5 @@
+<mvc:View
+	controllerName="sap.apf.cloudFoundry.ui.sharedialog.controller.ShareDialog"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc">
+</mvc:View>

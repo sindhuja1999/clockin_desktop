@@ -1,0 +1,57 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:l="sap.ui.layout"
+    xmlns:f="sap.ui.layout.form"
+    xmlns:core="sap.ui.core" >
+
+    <ScrollContainer horizontal="false" vertical="true" height="100%">
+        <f:SimpleForm id="reducedDestinationOverview"
+            editable="false"
+            layout="ResponsiveGridLayout"
+            labelSpanXL="3"
+            labelSpanL="3"
+            labelSpanM="3"
+            labelSpanS="12"
+            adjustLabelSpan="false"
+            columnsXL="1"
+            columnsL="1"
+            columnsM="1"
+            singleContainerFullSize="false" >
+            <Title text="{value: 'selectedDestination', formatter: '.translate'}" />
+            <f:content>
+                <Label id="reducedDestinationOverviewName" text="{value: 'destinationName', formatter: '.translate'}" />
+                <Text text="{destinations>name}" />
+                <Label id="reducedDestinationOverviewDescription" text="{value: 'destinationDescription', formatter: '.translate'}" />
+                <Text text="{destinations>description}" />
+                <Label id="reducedDestinationOverviewProxyType" text="{value: 'destinationProxyType', formatter: '.translate'}" />
+                <Text text="{path: 'destinations>proxyType', formatter: '.proxyTypeText'}" />
+                <Label id="reducedDestinationOverviewUrl" text="{value: 'url', formatter: '.translate'}" />
+                <Text text="{destinations>url}" />
+            </f:content>
+        </f:SimpleForm>
+        <f:SimpleForm id="reducedServiceOverview"
+            editable="false"
+            layout="ResponsiveGridLayout"
+            labelSpanXL="3"
+            labelSpanL="3"
+            labelSpanM="3"
+            labelSpanS="12"
+            adjustLabelSpan="false"
+            columnsXL="1"
+            columnsL="1"
+            columnsM="1"
+            singleContainerFullSize="false" >
+            <Title text="{value: 'selectedService', formatter: '.translate'}" />
+            <f:content>
+                <Label id="reducedServiceOverviewUrl" text="{value: 'url', formatter: '.translate'}" />
+                <Text text="{ui>/Service}" />
+                <Label id="reducedServiceOverviewStatus" text="{value: 'serviceStatus', formatter: '.translate'}" />
+                <ObjectStatus
+                    icon="{path: 'ui>/ServiceStatus', formatter: '.serviceStatusIcon'}"
+                    state="{path: 'ui>/ServiceStatus', formatter: '.serviceStatusState'}"
+                    text="{path: 'ui>/ServiceStatus', formatter: '.serviceStatusText'}" />
+            </f:content>
+        </f:SimpleForm>
+    </ScrollContainer>
+
+</core:FragmentDefinition>
