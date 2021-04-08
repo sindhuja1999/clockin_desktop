@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+   <meta charset="utf-8">
+   <title>Clock-In</title>
+   <link rel="stylesheet" href="style/myCSS.css">
+   <style>
+      #loader {
+         border: 12px solid #f3f3f3;
+         border-radius: 50%;
+         border-top: 12px solid #444444;
+         width: 70px;
+         height: 70px;
+         animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+         100% {
+            transform: rotate(360deg);
+         }
+      }
+
+      .center {
+         position: absolute;
+         top: 0;
+         bottom: 0;
+         left: 0;
+         right: 0;
+         margin: auto;
+      }
+   </style>
+   <script src="axios.min.js">
+
+   </script>
+   <script>
+      document.querySelector("body").style.visibility = "hidden";
+      document.querySelector("#loader").style.visibility = "visible"; 
+   </script>
+
+   <script id="sap-ui-bootstrap" src="./resources/sap-ui-core.js" , data-sap-ui-theme="wcmfioribelize"
+      data-sap-ui-libs="sap.m" data-sap-ui-bindingSyntax="complex" data-sap-ui-compatVersion="edge"
+      data-sap-ui-preload="async" data-sap-ui-resourceroots='{
+            "edu.weill.Timeevents": "./"
+         }'>
+         </script>
+
+   <script src="initial-app-load-sync.js"></script>
+
+
+   <script src="nedb.min.js"></script>
+   <script>
+      var db = new Nedb({
+         filename: 'mydatabase.db',
+         autoload: true
+      });
+      // var db = new Nedb({
+      // autoload: true
+      // });
+      // Create an in-memory only datastore
+      window.db = db;
+   </script>
+
+   <!-- <script src="geocoordinates.js"> -->
+
+
+
+   <!-- </script> -->
+
+   <script>
+      // const checkOnlineStatus = async () => {
+      //    try {
+      //       const online = await fetch("https://gwaas-b7mbepvdgi.us3.hana.ondemand.com/odata/sap/HCMFAB_MYTIMEEVENTS_SRV/");
+      //       return online.status >= 200 && online.status < 300; // either true or false
+      //    } catch (err) {
+      //       return false; // definitely offline
+      //    }
+      // };
+
+
+      // // forgot to include async load event listener in the video! 
+      // window.addEventListener("load", async (event) => {
+      //    let statusDisplay = (await checkOnlineStatus()) ? "Online" : "OFFline";
+      //    window.networkStatus = statusDisplay
+      //    // document.title = 'Timeevents' + statusDisplay
+      //    // console.log(statusDisplay)
+      // });
+
+   </script>
+
+
+   <script>
+      function loadUIComponent(accessToken, refreshToken) {
+         let hoptions = {
+            headers: {
+               'Authorization': 'Bearer ' + accessToken,
+            }
+         };
+
+         var oServiceURI;
+         $.getJSON('manifest.json', function (data) {
+            oServiceURI = data['sap.app'].dataSources['timeEventService'].uri;
+            console.log("data ", data['sap.app'].dataSources['timeEventService'].uri);
+
+         });
+         //Promise to return the configuration set data.
+         const configurationSet = new Promise((resolve, reject) => {
+            db.find({ module: 'ConfigurationSet' }, function (error, docs) {
+               if (error) {
+                  console.log('Error in Fetching Configuration Set Data', error)
+               }
+               else if (docs.length) {
+                  resolve()
+               }
+               else if (docs.length === 0) {
+                  if (navigator.onLine) {
+                     axios.get(oServiceURI + '/odata/SAP/HCMFAB_MYTIMEEVENTS_SRV/ConfigurationSet', hoptions)
+                        .then((configurationData) => {
+                           let configurationDataArray = configurationData.data.d.results;
+                           if (configurationDataArray.length) {
+                              db.insert({ module: 'ConfigurationSet', ConfigurationSet: configurationDataArray }, function (err, entities) {
+                                 if (err) {
+                                    console.log('Error in Creating the Configuration Set', err)
+                                    reject(err)
+                                 }
+                                 else if (entities) {
+                                    resolve()
+                                 }
+                              });
+                              resolve(configurationDataArray)
+                           }
+                           else if (configurationDataArray.length === 0) {
+                              resolve([])
+                           }
+                        })
+                        .catch((error) => {
+                           let inHtml = error.response.data.error.message.value
+                           document.body.innerHTML = inHtml;
+                           console.log('Error in Fetching the Configuration Set Promise Data', error)
+                           // reject(error)
+                        })
+                  }
+                  else if (!navigator.onLine) {
+                     resolve()
+                  }
+               }
+            })
+         })
+
+         //Promise to return the timeEventTypeSet Data.
+         const timeEventTypeSet = new Promise((resolve, reject) => {
+            db.find({ module: 'TimeEventTypeSet' }, function (error, docs) {
+               if (docs.length) {
+                  resolve();
+               }
+               else if (docs.length === 0) {
+                  if (navigator.onLine) {
+                     axios.get(oServiceURI + '/odata/SAP/HCMFAB_MYTIMEEVENTS_SRV/TimeEventTypeSet', hoptions).then((timeEventTypeSetData) => {
+                        let timeEventTypeSet = timeEventTypeSetData.data.d.results;
+                        if (timeEventTypeSet.length) {
+                           db.insert({ module: 'TimeEventTypeSet', TimeEventTypeSet: timeEventTypeSet }, function (err, entities) {
+                              if (err) {
+                                 console.log('Error in Creating the Configuration Set', err)
+                                 reject(err)
+                              }
+                              else if (entities) {
+                                 resolve()
+                              }
+                           });
+                           resolve(timeEventTypeSet)
+                        }
+                        else if (timeEventTypeSet.length === 0) {
+                           resolve([])
+                        }
+                     }).catch((error) => {
+                        reject(error)
+                     })
+                  }
+                  else if (!navigator.onLine) {
+                     resolve()
+                  }
+               }
+            })
+         })
+
+
+         //Promise to return the timeEventSet Data.
+         const timeEventSet = new Promise((resolve, reject) => {
+            db.find({ module: 'TimeEventSetIndividual' }, function (error, docs) {
+               if (error) {
+                  console.log(error, 'Error')
+               }
+               else if (docs.length === 0) {
+                  date = new Date()
+
+                  date.setYear(date.getFullYear());
+                  date.setMonth(date.getMonth(), 1);
+                  var dateFrom1 = date;
+                  date = new Date()
+                  date.setYear(date.getFullYear());
+                  date.setMonth(date.getMonth() + 1, 0);
+                  var dateTo1 = date;
+
+                  var now1 = dateFrom1.toISOString().replace('Z', '')
+                  var then1 = dateTo1.toISOString().replace('Z', '')
+
+                  if (navigator.onLine) {
+                     //axios.get(oServiceURI + '/odata/SAP/HCMFAB_MYTIMEEVENTS_SRV/TimeEventSet', hoptions).then((resp) => {
+                     axios.get(oServiceURI + "/odata/sap/HCMFAB_MYTIMEEVENTS_SRV/TimeEventSet?$filter=DateFrom eq datetime'" + now1 + "' and DateTo eq datetime'" + then1 + "'", hoptions).then((resp) => {
+                        let myarr = resp.data.d.results;
+                        for (let i = 0; i < myarr.length; i++) {
+                           if (myarr[i].StatusText === 'Approved') {
+                              db.insert({ module: 'TimeEventSetIndividual', isSynced: true, isPosted: false, ...myarr[i] }, function (err, entities) {
+                                 if (err) {
+                                    console.log('Error in inserting records into TimeEventSetIndividual module in initial app load', err)
+                                 }
+                              });
+                           }
+                           if (myarr[i].StatusText === 'Posted') {
+                              db.insert({ module: 'TimeEventSetIndividual', isSynced: true, isPosted: true, ...myarr[i] }, function (err, entities) {
+                                 if (err) {
+                                    console.log('Error in inserting records into TimeEventSetIndividual module in initial app load', err)
+                                 }
+                              });
+                           }
+                        }
+                        resolve(resp)
+
+                     }).catch(function (error) {
+                        console.log('Error in promise1', error)
+                     })
+                  }
+                  else if (!navigator.onLine) {
+                     resolve()
+                  }
+
+               }
+               else if (docs.length) {
+                  resolve()
+               }
+            })
+         })
+
+         const employeeDetailsSet = new Promise((resolve, reject) => {
+            db.find({ module: 'EmployeeDetailSet' }, function (error, docs) {
+               if (docs.length) {
+                  resolve()
+                  return docs;
+               }
+               else if (docs.length === 0) {
+                  axios.get(oServiceURI + '/odata/sap/HCMFAB_COMMON_SRV/EmployeeDetailSet', hoptions).then((resp3) => {
+                     let myarr3 = resp3.data.d.results;
+                     db.insert({ module: 'EmployeeDetailSet', EmployeeDetailSet: myarr3 }, function (err, entities) {
+                        if (err) {
+                           console.log('Error in Creating the Configuration Set', err)
+                        }
+                        else if (entities) {
+                           resolve()
+                        }
+                     });
+
+                  }).catch(function (error) {
+                     console.log(error)
+                  })
+
+               }
+            })
+         });
+
+         Promise.all([configurationSet, timeEventSet, employeeDetailsSet]).then((values) => {
+            timeEventTypeSet.then((value) => {
+               // mysync()
+               // getCoordinate()
+            }).catch((error) => {
+               console.log('Error in loading the time event set', error)
+            })
+            sap.ui.getCore().attachInit(function () {
+               new sap.ui.core.ComponentContainer({
+                  name: "edu.weill.Timeevents"
+               }).placeAt("content");
+
+            });
+         })
+      }
+   </script>
+
+</head>
+
+<body class="sapUiBody" id="content">
+   <div id="loader" class="center"></div>
+
+</body>
+<script>
+   var accessToken;
+   var settings = {
+      "url": "http://localhost:5858/electron",
+      "method": "GET",
+      "timeout": 0,
+   };
+   $.ajax(settings).done(function (response) {
+      accessToken = response.accessToken;
+
+      localStorage.setItem('token', atob(response.accessToken))
+      localStorage.setItem('refreshtoken', atob(response.refreshToken))
+
+      loadUIComponent(atob(response.accessToken), atob(response.refreshToken));
+      // mysync()
+   })
+</script>
+
+</html>

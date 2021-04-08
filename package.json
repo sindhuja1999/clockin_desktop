@@ -1,0 +1,86 @@
+{
+  "name": "ClockIn",
+  "version": "1.0.1",
+  "description": "Clock In Application which works both in online and offline mode",
+  "main": "main.js",
+  "scripts": {
+    "startTest": "npm install && electron ./",
+    "startServerTest": "node ./bin/www & electron ./",
+    "startServer": "node ./bin/www",
+    "start": "electron ./",
+    "startwithmaps": "SET GOOGLE_API_KEY=AIzaSyBIwzALxUPNbatRBj3Xi1Uhp0fFzwWNBkE && electron ./ ",
+    "newScript": "npm run startServer & npm run start",
+    "build": "./node_modules/.bin/electron-packager . wcmApp --platform linux --arch x64 --out dist/",
+    "dist-debian": "./node_modules/.bin/electron-packager . wcmApp --platform linux --arch x64 --out dist/",
+    "dist-win": "electron-builder --publish never --win",
+    "dist-mac": "electron-builder --publish never --mac",
+    "rebuild": "npm install && ./node_modules/.bin/electron-rebuild",
+    "electron-build": "electron-builder build",
+    "build-exe": "npm run electron-build",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "keywords": [],
+  "build": {
+    "appId": "edu.weill.ClockIn",
+    "productName": "ClockIn",
+    "afterSign": "scripts/notarize.js",
+    "win": {
+      "icon": "assets/icons/icon-1024.ico",
+      "target": [
+        "msi",
+        "nsis",
+        "portable",
+        "appx"
+      ],
+      "certificateSubjectName": "CN=Weill Cornell Medical College, OU=Information Technologies and Services, O=Weill Cornell Medical College, STREET=1300 York Avenue, L=New York, S=NY, PostalCode=10065, C=US",
+      "publisherName": "CN=Weill Cornell Medical College, OU=Information Technologies and Services, O=Weill Cornell Medical College, STREET=1300 York Avenue, L=New York, S=NY, PostalCode=10065, C=US",
+      "signAndEditExecutable": true
+    },
+    "mac": {
+      "target": [
+        "pkg",
+        "dmg",
+        "zip"
+      ],
+      "icon": "assets/icons/icon-1024.png",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "provisioningProfile": "/Users/ranganathpavan/Downloads/timeevents/WBGMacOS.provisionprofile",
+      "type": "distribution"
+    },
+    "dmg": {
+      "sign": false
+    },
+    "nsis": {
+      "perMachine": true
+    }
+  },
+  "author": "WCM<wcm@github.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^5.2.0",
+    "electron": "^8.1.1",
+    "electron-builder": "^22.8.0",
+    "electron-notarize": "^1.0.0",
+    "electron-packager": "^14.2.1",
+    "electron-rebuild": "^1.10.1"
+  },
+  "dependencies": {
+    "axios": "^0.21.1",
+    "body-parser": "^1.19.0",
+    "debug": "~2.6.9",
+    "electron-log": "^4.2.4",
+    "electron-updater": "^4.3.8",
+    "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1",
+    "jwt-decode": "^2.2.0",
+    "keytar": "^6.0.1",
+    "moment": "^2.24.0",
+    "moment-timezone": "^0.5.28",
+    "nedb": "^1.8.0",
+    "odata": "^1.1.0",
+    "punycode": "^2.1.1"
+  }
+}
