@@ -1,6 +1,6 @@
 {
   "name": "ClockIn",
-  "version": "1.0.1",
+  "version": "1.0.5",
   "description": "Clock In Application which works both in online and offline mode",
   "main": "main.js",
   "scripts": {
@@ -36,6 +36,13 @@
       "publisherName": "CN=Weill Cornell Medical College, OU=Information Technologies and Services, O=Weill Cornell Medical College, STREET=1300 York Avenue, L=New York, S=NY, PostalCode=10065, C=US",
       "signAndEditExecutable": true
     },
+    "nsis": {
+      "perMachine": true,
+      "guid": "+CLzPKrN7E+4IkxkqMUUzg==",
+      "oneClick": true,
+      "runAfterFinish": false,
+      "include": "build/installer.nsh"
+    },
     "mac": {
       "target": [
         "pkg",
@@ -52,9 +59,6 @@
     },
     "dmg": {
       "sign": false
-    },
-    "nsis": {
-      "perMachine": true
     }
   },
   "author": "WCM<wcm@github.com>",
