@@ -8,7 +8,7 @@ module.exports = {
     oAuthBaseUrl: 'https://oauthasservices-b7mbepvdgi.us3.hana.ondemand.com',
     oDataEndPoint: 'https://gwaas-b7mbepvdgi.us3.hana.ondemand.com'
   },
-  dev: {
+  wcm: {
     clientId: 'da94326e-4a70-393c-a6df-a2e1625fa3e6', // Replace with Dev Client Id
     clientSecret: 'wweillcornellgw', // Replace with Dev Client secret
     redirectUri: 'https://localhost:3000/callback', // Remains same or replace it as necessary
@@ -29,7 +29,7 @@ module.exports = {
     oAuthBaseUrl: 'https://oauthasservices-b7mbepvdgi.us3.hana.ondemand.com', //Remains same or replace it as necessary
     oDataEndPoint: 'https://gwaas-b7mbepvdgi.us3.hana.ondemand.com'
   },
-  wcm: {
+  prod: {
     clientId: 'a4da749f-2a02-3f9f-b52e-305a9be40047', // Replace with production Client Id
     clientSecret: 'wweillcornellgw', // Replace with production Client secret
     redirectUri: 'https://localhost:3000/callback', // Remains same or replace it as necessary

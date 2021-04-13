@@ -43,7 +43,7 @@ const getAppPath = path.join(app.getPath('appData'), appName);
 
 async function showWindow() {
   try {
-    const { clientId, clientSecret, redirectUri } = envVariables.dev;
+    const { clientId, clientSecret, redirectUri } = envVariables.wcm;
     let oAuthprovider = new WcmProvider(axios, querystring, clientId, clientSecret);
     // let authenticationService = new AuthenticationService(keytar, moment, os, oAuthprovider, redirectUri);
     let authenticationService = new AuthenticationService(keytar, moment, os, oAuthprovider, redirectUri, axios);
