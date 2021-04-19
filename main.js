@@ -37,20 +37,19 @@ const getAppPath = path.join(app.getPath('appData'), appName);
 
 
 
-// console.log('getAppPath', getAppPath, 'appName', appName, 'appData', app.getPath('appData'))
-// console.log(os.type(), '1', os.release(), '2', os.platform(), '3')
 //server code ends
+/**
+ * @description Function to display the Authentication window if the user is not authenticated, display the app window if the user is already authenticated.
+ */
 
 async function showWindow() {
   try {
     const { clientId, clientSecret, redirectUri } = envVariables.wcm;
     let oAuthprovider = new WcmProvider(axios, querystring, clientId, clientSecret);
-    // let authenticationService = new AuthenticationService(keytar, moment, os, oAuthprovider, redirectUri);
     let authenticationService = new AuthenticationService(keytar, moment, os, oAuthprovider, redirectUri, axios);
     authenticationService.getAccessToken((token) => {
       if (token) {
         createAppWindow();
-        // authenticationService.increaseAccessTokenValidity()
       } else {
         createAuthWindow(authenticationService);
       }
@@ -93,12 +92,10 @@ myapp.get('/electron', (req, res, next) => {
           })
         }
         else if (data) {
-          // console.log('Data after jwt conversion', data)
           res.json({
             accessToken: new Buffer(token).toString('base64'),
             refreshToken: new Buffer(refreshToken).toString('base64')
           })
-          // res.send(data)
         }
       })
     }).catch((error) => {
