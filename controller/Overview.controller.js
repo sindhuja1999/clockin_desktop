@@ -42,7 +42,7 @@ sap.ui.define([
 			oControl.setValueState("None");
 		}
 	}
-	let syncclocktimer = 300;
+	let syncclocktimer = 7200;
 	return BaseController.extend("edu.weill.Timeevents.controller.Overview", {
 		/* =========================================================== */
 		/* controller hooks                                            */
@@ -77,15 +77,15 @@ sap.ui.define([
 				}
 			};
 
-			setInterval(async () => {
-				const result = await checkOnlineStatus();
-				var oViewModel = new JSONModel({
-					networkStatus: (result ? 'Online' : 'Offline')
-				});
-				window.networkStatus = result;
-				that.getView().setModel(oViewModel, "networkStatusModel");
+			// setInterval(async () => {
+			// 	const result = await checkOnlineStatus();
+			// 	var oViewModel = new JSONModel({
+			// 		networkStatus: (result ? 'Online' : 'Offline')
+			// 	});
+			// 	window.networkStatus = result;
+			// 	that.getView().setModel(oViewModel, "networkStatusModel");
 
-			}, 10000); // probably too often, try 10000 for every 10 seconds
+			// }, 10000); // probably too often, try 10000 for every 10 seconds
 
 			window.addEventListener("load", async (event) => {
 				let statusDisplay = (await checkOnlineStatus()) ? "Online" : "Offline";
@@ -93,7 +93,7 @@ sap.ui.define([
 					networkStatus: statusDisplay
 				});
 				window.networkStatus = statusDisplay;
-				that.getView().setModel(oViewModel, "networkStatusModel");
+				// that.getView().setModel(oViewModel, "networkStatusModel");
 				// document.title = 'Timeevents' + statusDisplay
 			});
 
@@ -120,9 +120,30 @@ sap.ui.define([
 			//Code to show the sync timer on the screen default time is 5 minutes.
 
 
+			function formatToHrs(time) {   
+				// Hours, minutes and seconds
+				var hrs = ~~(time / 3600);
+				var mins = ~~((time % 3600) / 60);
+				var secs = ~~time % 60;
+			
+				var ret = "";
+				if (hrs > 0) {
+					ret += "" + hrs + ":" + (mins < 10 ? "0" : "");
+				}
+				ret += "" + mins + ":" + (secs < 10 ? "0" : "");
+				ret += "" + secs;
+				return ret;
+			}
+
 			setInterval(() => {
+				syncclocktimer--;
+				let timertodisplay = formatToHrs(syncclocktimer)
+				
+				// var oViewModel = new JSONModel({
+				// 	syncTimer: syncclocktimer--
+				// });
 				var oViewModel = new JSONModel({
-					syncTimer: syncclocktimer--
+					syncTimer: timertodisplay
 				});
 				that.getView().setModel(oViewModel, "syncModel");
 			}, 1000)
@@ -135,7 +156,7 @@ sap.ui.define([
 			 */
 			const alertOnlineStatusFinal = () => {
 				intervalTimer = setInterval(function () {
-					syncclocktimer = 300;
+					syncclocktimer = 7200;
 					date = new Date();
 					date.setDate(date.getDate() - 14)
 					var dateFrom1 = date;
@@ -2374,16 +2395,18 @@ sap.ui.define([
 						// var timeType = customData.Subtype;
 						var timeType = customData.TimeType;
 						var timeTypeText = customData.TimeTypeText;
-						// var employeeId =  "20051441";
 						var employeeId = customData.EmployeeID;
 						let currentDate = new Date();
-						let timeStampToAppend = currentDate.getMonth() + '' + currentDate.getDate() + '' + currentDate.getFullYear() + '' + currentDate.getHours() + '' + currentDate.getMinutes() + '' + currentDate.getSeconds()
+						var dateParse = sap.ui.core.format.DateFormat.getDateInstance({
+							pattern: "yyyyMMddhhmmss"
+						});
+						let timeStampToAppend = dateParse.format(currentDate);
 						var appStatus;
 						if (navigator.onLine || window.networkStatus === 'Online') {
-							appStatus = "D".concat(navigator.platform.substr(0, 1), "-ONL") + timeStampToAppend;
+							appStatus = "D".concat(navigator.platform.substr(0, 1), "ONL") + timeStampToAppend;
 						}
 						else {
-							appStatus = "D".concat(navigator.platform.substr(0, 1), "-OFL") + timeStampToAppend;
+							appStatus = "D".concat(navigator.platform.substr(0, 1), "OFL") + timeStampToAppend;
 						}
 						// var employeeId = this.byId("empID").getText();
 						timezoneOffset = timezoneOffset.toFixed(2);

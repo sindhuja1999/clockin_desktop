@@ -1,6 +1,6 @@
 {
   "name": "ClockIn",
-  "version": "1.0.5",
+  "version": "1.0.7",
   "description": "Clock In Application which works both in online and offline mode",
   "main": "main.js",
   "scripts": {
