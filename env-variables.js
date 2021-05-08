@@ -9,6 +9,7 @@ module.exports = {
     oDataEndPoint: 'https://gwaas-b7mbepvdgi.us3.hana.ondemand.com'
   },
   wcm: {
+    // Git Ignore test with feature branch
     clientId: 'da94326e-4a70-393c-a6df-a2e1625fa3e6', // Replace with Dev Client Id
     clientSecret: 'wweillcornellgw', // Replace with Dev Client secret
     redirectUri: 'https://localhost:3000/callback', // Remains same or replace it as necessary
