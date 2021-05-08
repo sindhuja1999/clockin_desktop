@@ -1,7 +1,7 @@
 {
   "name": "ClockIn",
   "version": "1.0.7",
-  "description": "Clock In Application which works both in online and offline mode",
+  "description": "Clock In Application which works both in online and offline mode.",
   "main": "main.js",
   "scripts": {
     "startTest": "npm install && electron ./",
@@ -41,6 +41,7 @@
       "guid": "+CLzPKrN7E+4IkxkqMUUzg==",
       "oneClick": true,
       "runAfterFinish": false,
+      "shortcutName": "Clock-In",
       "include": "build/installer.nsh"
     },
     "mac": {
@@ -54,7 +55,7 @@
       "gatekeeperAssess": false,
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist",
-      "provisioningProfile": "/Users/ranganathpavan/Downloads/timeevents/WBGMacOS.provisionprofile",
+      "provisioningProfile": "prov_profile/WBGMacOS.provisionprofile",
       "type": "distribution"
     },
     "dmg": {

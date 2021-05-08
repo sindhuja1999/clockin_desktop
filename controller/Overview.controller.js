@@ -66,17 +66,16 @@ sap.ui.define([
 			//
 
 
-			var oServiceURI = this.getOwnerComponent().getMetadata().getManifestEntry("sap.app").dataSources["timeEventService"].uri;
-
-			const checkOnlineStatus = async () => {
-				try {
-					const online = await fetch(oServiceURI + "/odata/SAP/HCMFAB_MYTIMEEVENTS_SRV/ConfigurationSet");
-					return online.status >= 200 && online.status < 300; // either true or false
-				} catch (err) {
-					return false; // definitely offline
-				}
-			};
-
+			// var oServiceURI = this.getOwnerComponent().getMetadata().getManifestEntry("sap.app").dataSources["timeEventService"].uri;
+			// const checkOnlineStatus = async () => {
+			// 	try {
+			// 		const online = await fetch(oServiceURI + "/odata/SAP/HCMFAB_MYTIMEEVENTS_SRV/ConfigurationSet");
+			// 		return online.status >= 200 && online.status < 300; // either true or false
+			// 	} catch (err) {
+			// 		return false; // definitely offline
+			// 	}
+			// };
+			// Code to check the network status
 			// setInterval(async () => {
 			// 	const result = await checkOnlineStatus();
 			// 	var oViewModel = new JSONModel({
@@ -87,15 +86,15 @@ sap.ui.define([
 
 			// }, 10000); // probably too often, try 10000 for every 10 seconds
 
-			window.addEventListener("load", async (event) => {
-				let statusDisplay = (await checkOnlineStatus()) ? "Online" : "Offline";
-				var oViewModel = new JSONModel({
-					networkStatus: statusDisplay
-				});
-				window.networkStatus = statusDisplay;
-				// that.getView().setModel(oViewModel, "networkStatusModel");
-				// document.title = 'Timeevents' + statusDisplay
-			});
+			// window.addEventListener("load", async (event) => {
+			// 	let statusDisplay = (await checkOnlineStatus()) ? "Online" : "Offline";
+			// 	var oViewModel = new JSONModel({
+			// 		networkStatus: statusDisplay
+			// 	});
+			// 	window.networkStatus = statusDisplay;
+			// 	// that.getView().setModel(oViewModel, "networkStatusModel");
+			// 	// document.title = 'Timeevents' + statusDisplay
+			// });
 
 			//
 			var that = this;
@@ -114,39 +113,35 @@ sap.ui.define([
 			})
 
 			var intervalTimer;
-
-			var syncIntervalTimer;
-
+			// var syncIntervalTimer;
 			//Code to show the sync timer on the screen default time is 5 minutes.
-
-
-			function formatToHrs(time) {   
-				// Hours, minutes and seconds
-				var hrs = ~~(time / 3600);
-				var mins = ~~((time % 3600) / 60);
-				var secs = ~~time % 60;
+			// function formatToHrs(time) {   
+			// 	// Hours, minutes and seconds
+			// 	var hrs = ~~(time / 3600);
+			// 	var mins = ~~((time % 3600) / 60);
+			// 	var secs = ~~time % 60;
 			
-				var ret = "";
-				if (hrs > 0) {
-					ret += "" + hrs + ":" + (mins < 10 ? "0" : "");
-				}
-				ret += "" + mins + ":" + (secs < 10 ? "0" : "");
-				ret += "" + secs;
-				return ret;
-			}
+			// 	var ret = "";
+			// 	if (hrs > 0) {
+			// 		ret += "" + hrs + ":" + (mins < 10 ? "0" : "");
+			// 	}
+			// 	ret += "" + mins + ":" + (secs < 10 ? "0" : "");
+			// 	ret += "" + secs;
+			// 	return ret;
+			// }
 
-			setInterval(() => {
-				syncclocktimer--;
-				let timertodisplay = formatToHrs(syncclocktimer)
+			// setInterval(() => {
+			// 	syncclocktimer--;
+			// 	let timertodisplay = formatToHrs(syncclocktimer)
 				
-				// var oViewModel = new JSONModel({
-				// 	syncTimer: syncclocktimer--
-				// });
-				var oViewModel = new JSONModel({
-					syncTimer: timertodisplay
-				});
-				that.getView().setModel(oViewModel, "syncModel");
-			}, 1000)
+			// 	// var oViewModel = new JSONModel({
+			// 	// 	syncTimer: syncclocktimer--
+			// 	// });
+			// 	var oViewModel = new JSONModel({
+			// 		syncTimer: timertodisplay
+			// 	});
+			// 	that.getView().setModel(oViewModel, "syncModel");
+			// }, 1000)
 
 
 
@@ -225,7 +220,7 @@ sap.ui.define([
 			// this.selectedDate = curDate;
 			this.selectedDate = new Date();
 
-			// Added code by Sumanth
+			// Fetch current date events from local DB
 			new Promise(
 				function (fnResolve, fnReject) {
 					that.getConfiguration();
@@ -243,11 +238,6 @@ sap.ui.define([
 			this.getEventTypes(this.empID);
 			this.getGeoCoordinates();
 
-
-			// this.getConfiguration();
-			// this.empID = this.configuration.EmployeeID;
-			// this.getEventTypes(this.empID);	
-			// this.getEvents(new Date());
 			//End of Addition
 
 			//Intervals used to show the clock in quick entry and detailed entry tab
@@ -875,7 +865,6 @@ sap.ui.define([
 						design: "Bold"
 					}));
 					oElements.push(new sap.m.Text({
-						// text: position.coords.latitude + '\n' + position.coords.longitude
 						text: latitude + '\n' + longitude
 
 						// let query = { module: 'GeoCoordinates' }
@@ -896,15 +885,7 @@ sap.ui.define([
 
 
 					}));
-					//}
-					// 'Latitude: '          + position.coords.latitude          + '\n' +
-					//           'Longitude: '         + position.coords.longitude         + '\n' +
-					//           'Altitude: '          + position.coords.altitude          + '\n' +
-					//           'Accuracy: '          + position.coords.accuracy          + '\n' +
-					//           'Altitude Accuracy: ' + position.coords.altitudeAccuracy  + '\n' +
-					//           'Heading: '           + position.coords.heading           + '\n' +
-					//           'Speed: '             + position.coords.speed             + '\n' +
-					//           'Timestamp: '         + position.timestamp                + '\n');
+
 					for (var i = 0; i < oSettings.additionalInformation.length; i++) {
 						oElements.push(new sap.m.Label({
 							text: oSettings.additionalInformation[i].label,
@@ -1777,16 +1758,138 @@ sap.ui.define([
 		 * @public
 		 */
 		getEvents: function (date) {
-			var that = this;
+			// Below code is in the custom online version of time event app
+			// var that = this;
 			// this.byId("idEventsTable").setBusy(true);
-			// value1 = this.oFormatYyyymmdd.format(date);
+			// var a = new sap.ui.model.Filter({
+			// 	path: "EventDate",
+			// 	operator: sap.ui.model.FilterOperator.EQ,
+			// 	value1: this.oFormatYyyymmdd.format(date)
+			// });
+			// var b = new sap.ui.model.Filter({
+			// 	path: "EmployeeID",
+			// 	operator: sap.ui.model.FilterOperator.EQ,
+			// 	value1: this.empID
+			// });
+			// var f = [];
+			// f.push(a);
+			// f.push(b);
+			// // var o = "EventTime";
+			// var oModel = new sap.ui.model.json.JSONModel();
+			// var mParameters = {
+			// 	filters: f, // your Filter Array
+			// 	// orderby: o,
+			// 	success: function (oData, oResponse) {
+			// 		that.byId("idEventsTable").setBusy(false);
+			// 		var a = oData;
+			// 		that.timeEvents = a;
+			// 		var removeIndices = [];
+			// 		for (var i = 0; i < a.results.length; i++) {
+			// 			try {
+			// 				var date1 = new Date(a.results[i].EventDate);
+			// 				var date2 = new Date(date1.getUTCFullYear(), date1.getUTCMonth(), date1.getUTCDate());
+			// 				date = date2;
+			// 			} catch (o) {
+			// 				date = new Date(a.results[i].EventDate);
+			// 			}
+			// 			a.results[i].EventDate = date;
+			// 			switch (a.results[i].Status) {
+			// 				case "APPROVED":
+			// 					a.results[i].State = "Success";
+			// 					break;
+			// 				case "POSTED":
+			// 					a.results[i].State = "Success";
+			// 					break;
+			// 				case "REJECTED":
+			// 					a.results[i].State = "Error";
+			// 					break;
+			// 				case "SENT":
+			// 					a.results[i].State = "Warning";
+			// 					break;
+			// 				case "HOLIDAY":
+			// 					removeIndices.push(i);
+			// 					break;
+			// 				case "NONWORKING":
+			// 					removeIndices.push(i);
+			// 					break;
+			// 			}
+			// 			if (that.configuration.ModifyAllowed === "X") {
+			// 				a.results[i].ActionModify = "X";
+			// 			}
+			// 			if (that.configuration.DeleteAllowed === "X") {
+			// 				a.results[i].ActionDelete = "X";
+			// 			}
+			// 			switch (a.results[i].Origin) {
+			// 				case "E":
+			// 					a.results[i].type = "Inactive";
+			// 					a.results[i].change = true;
+			// 					break;
+			// 				case "":
+			// 				case "S":
+			// 					if (that.configuration.ModifySubsystem !== undefined &&
+			// 						that.configuration.ModifySubsystem == 'X') {
+			// 						a.results[i].type = "Inactive";
+			// 						a.results[i].change = true;
+			// 					} else {
+			// 						a.results[i].type = "Inactive";
+			// 						a.results[i].change = false;
+			// 						// a.results[i].type = "Inactive";
+			// 					}
+			// 					break;
+			// 				default:
+			// 					a.results[i].type = "Inactive";
+			// 					a.results[i].change = false;
+			// 					// a.results[i].type = "Inactive";
+			// 					break;
+			// 			}
+			// 		}
+			// 		if (removeIndices) {
+			// 			for (var r = removeIndices.length - 1; r >= 0; r--) {
+			// 				a.results.splice(removeIndices[r], 1);
+			// 			}
+			// 		}
+			// 		oModel.setData(a.results);
+			// 		var oSorter1 = new sap.ui.model.Sorter("EventTime/ms", true, false);
+			// 		that.byId('idEventsTable').setModel(oModel, "timeEventList");
+			// 		that.byId('idEventsTable').getBinding("items").sort(oSorter1);
+			// 		var tabEntryList = that.byId("idEventsTable").getItems();
+			// 		for (var k = 0; k < tabEntryList.length; k++) {
+			// 			if (a.results[k].Origin !== "E" || a.results[k].ActionDelete !== "X") {
+			// 				if (tabEntryList[k].getDeleteControl()) {
+			// 					tabEntryList[k].getDeleteControl().setVisible(false);
+			// 				} else {
+			// 					tabEntryList[k].getDeleteControl(event).setVisible(false);
+			// 				}
+			// 			} else {
+			// 				if (tabEntryList[k].getDeleteControl()) {
+			// 					tabEntryList[k].getDeleteControl().setVisible(true);
+			// 				} else {
+			// 					tabEntryList[k].getDeleteControl(event).setVisible(true);
+			// 				}
+			// 			}
+			// 		}
+			// 		if (that.NoCalendarInit === "true") {
+			// 			that.NoCalendarInit = "false";
+			// 		} else {
+			// 			that.initCalendar(that.empID);
+			// 		}
+			// 	},
+			// 	error: function (oError) {
+			// 		that.byId("idEventsTable").setBusy(false);
+			// 		that.processError(oError);
+			// 	}
+			// };
+			// this.oDataModel
+			// 	.read(
+			// 		"/TimeEventSet",
+			// 		mParameters);
+			
+			
+			
+			var that = this;
 			var dt = date;
-			// var filterdate = new Date(date) * 1;
 			var newDate = new Date(Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate()));
 			var date1 = '/Date(' + newDate.getTime() + ')/';
-
-			// var date1 = "/Date(" + filterdate + ")/";//Json format date 
-
 			let currDate = new Date();
 			let firstDay = new Date(currDate.getFullYear(), currDate.getMonth() - 1, 1).toISOString();
 			let lastDay = new Date(currDate.getFullYear(), currDate.getMonth() + 1, 0).toISOString();
@@ -1798,30 +1901,15 @@ sap.ui.define([
 				// value1: this.oFormatYyyymmdd.format(date)
 			});
 
-
-
 			var f = [];
 			f.push(a);
-
 			var oType = new sap.ui.model.odata.type.DateTime({ pattern: { style: 'long', UTC: 'false' } });
 			oType.formatValue(new Date(), 'string');
-
-
-
 			db.find({ module: "TimeEventSetIndividual", EventDate: date1 }, function (err, data) {
-				// db.find({ module: "TimeEventSetIndividual", EventDate: date1 }).sort({ EventDate: -1 }).exec(function (err, data) {
 				var oModel = new sap.ui.model.json.JSONModel();
-				// that.byId("idEventsTable").setBusy(true);
 				a.results = data;
 
 				for (var i = 0; i < a.results.length; i++) {
-					// try {
-					// 	var date1 = new Date(a.results[i].EventDate);
-					// 	var date2 = new Date(date1.getUTCFullYear(), date1.getUTCMonth(), date1.getUTCDate());
-					// 	date = date2;
-					// } catch (o) {
-					// 	date = new Date(a.results[i].EventDate);
-					// }
 					switch (a.results[i].Status) {
 						case "APPROVED":
 							a.results[i].State = "Success";
@@ -1839,9 +1927,7 @@ sap.ui.define([
 
 					if (a.results[i].EventDate !== "" && a.results[i].EventDate !== null && a.results[i].EventDate !== undefined) {
 						if (a.results[i].EventDate !== 0) {
-
 							var nowdate = new Date(parseInt(a.results[i].EventDate.substr(6)));
-
 							a.results[i].EventDate = nowdate;
 							var t = a.results[i].EventTime;
 							let mins = t.substring(t.indexOf("H") + 1, t.indexOf("M"));
@@ -1849,7 +1935,6 @@ sap.ui.define([
 							let seconds = t.substring(t.indexOf("M") + 1, t.indexOf("S"));
 							seconds = seconds <= 9 ? (0 + seconds) : (seconds)
 							var t1 = t.substring(t.indexOf("T") + 1, t.indexOf("H")) + ':' + mins + ':' + seconds;
-
 							var hours = t1.substring(0, t1.indexOf(':'));
 							if (hours >= 12) {
 								if (hours == 12) {
@@ -1859,42 +1944,26 @@ sap.ui.define([
 									t1 = hours - 12 + ':' + mins + ':' + seconds + " PM";
 								}
 							}
-
 							else {
 								t1 = (t1.substring(0, t1.indexOf(":")) == '0' ? '12' : t1.substring(0, t1.indexOf(":"))) + t1.substring(t1.indexOf(":"), t1.length)
 								t1 = t1 + " AM";
 							}
 							a.results[i].EventTime = t1;
 							a.results[i].timerforsort = parseInt((hours * 60 * 60) + (mins * 60) + seconds)
-
-
 						} else {
 							// a.results[i].EventTime = "";
 						}
 					}
-
 					a.results[i].type = "Inactive";
-
 				}//closing for loop
 				a.results.sort((one, two) => {
 					return two.timerforsort - one.timerforsort
 				})
-
 				that.getView().byId("idEventsTable").setModel(new sap.ui.model.json.JSONModel(a.results));
 				that.getView().byId("idEventsTable1").setModel(new sap.ui.model.json.JSONModel(a.results));
-
-				// var oTable = that.getView().byId("idEventsTable");
-				// var binding = oTable.getBinding("items");
-				// 	binding.filter(f);
-
-				// oModel.setData(a.results);
 				that.byId('idEventsTable').setModel(oModel, "timeEventList");
 				that.initCalendar("");
-
-
 			});
-
-
 		},
 		/**
 		 * Called when application load time event types.
@@ -1902,41 +1971,18 @@ sap.ui.define([
 		 */
 		getEventTypes: function (oPernr) {
 			var that = this;
+			//Replaced the code with local DB Read
 			// var a = new sap.ui.model.Filter({
 			// 	path: "EmployeeID",
 			// 	operator: sap.ui.model.FilterOperator.EQ,
-			// 	value1: ""
+			// 	value1: this.empID
 			// });
-			var f = [];
+			// var f = [];
 			// f.push(a);
-			//Code added by Sumanth
-			var oModel = new sap.ui.model.json.JSONModel();
-
-			// this.oDataModel.read(
-			// 	"/TimeEventTypeSet", {
-			// 	filters: f,
-			// 	success: function (oData, oResponse) {
-			// 		that.byId("favList").setBusy(false);
-			// 		var data = oData.results;
-			// 		oModel.setData(data);
-			// 		that.setModel(oModel, "TimeEventTypeSet");
-			// 		that.setGlobalModel(oModel, "eventTypeModel");
-			// 		that.setModel(oModel, "timeEventType");
-			// 	},
-			// 	error: function (oError) {
-			// 		that.
-
-
-			// 			byId("favList").setBusy(false);
-			// 		that.processError(oError);
-			// 	}
-			// });
-			//End of Code by Sumanth
-			//Commented by Sumanth
 			// var oModel = new sap.ui.model.json.JSONModel();
 			// var mParameters = {
 			// 	filters: f, // Filter Array
-			// 	success: function(oData, oResponse) {
+			// 	success: function (oData, oResponse) {
 			// 		var a = oData;
 			// 		var oFavorites = that.getModel('FavoritesSet').getData();
 			// 		for (var i = 0; i < oFavorites.length; i++) {
@@ -1950,7 +1996,7 @@ sap.ui.define([
 			// 		that.setGlobalModel(oModel, "eventTypeModel");
 			// 		that.setModel(oModel, "timeEventType");
 			// 	},
-			// 	error: function(oError) {
+			// 	error: function (oError) {
 			// 		that.processError(oError);
 			// 	}
 			// };
@@ -1959,7 +2005,7 @@ sap.ui.define([
 			// 	.read(
 			// 		"/TimeEventTypeSet",
 			// 		mParameters);
-			//End of Comment by Sumanth
+
 			db.findOne({ module: "TimeEventTypeSet" }, function (err, data) {
 
 				function sortFunc(a, b) {
@@ -1968,7 +2014,6 @@ sap.ui.define([
 					var order = ["P10", "P15", "P25", "P20"];
 					return order.indexOf(a.TimeType) - order.indexOf(b.TimeType);
 				}
-
 				data.TimeEventTypeSet.sort(sortFunc);
 				that.getView().byId("favList").setModel(new sap.ui.model.json.JSONModel(data.TimeEventTypeSet));
 
@@ -2040,22 +2085,54 @@ sap.ui.define([
 				f.push(c);
 			}
 
-			//Need to remove custom code.
+			//Below code is standard and to be adjusted for non working day display	
+			// var that = this;
+			// var f = [];
+			// var a = new sap.ui.model.Filter({
+			// 	path: "EmployeeID",
+			// 	operator: sap.ui.model.FilterOperator.EQ,
+			// 	value1: Pernr
+			// });
+			// var b = new sap.ui.model.Filter({
+			// 	path: "DateFrom",
+			// 	operator: sap.ui.model.FilterOperator.EQ,
+			// 	value1: this.dateFrom
+			// });
+			// this.dateTo.setUTCDate(this.dateTo.getUTCDate() + 1);
+			// var c = new sap.ui.model.Filter({
+			// 	path: "DateTo",
+			// 	operator: sap.ui.model.FilterOperator.EQ,
+			// 	value1: this.dateTo
+			// });
+			// f.push(a);
+			// if (this.dateFrom && this.dateTo) {
+			// 	f.push(b);
+			// 	f.push(c);
+			// }
+
 			// var mParameters = {
 			// 	filters: f, // Filter Array
 			// 	success: function (oData, oResponse) {
 			// 		that.calendar.removeAllSpecialDates();
 			// 		that.mCalendar.removeAllSpecialDates();
 			// 		var a = oData;
+			// 		var date;
 			// 		for (var i = 0; i < a.results.length; i++) {
-
+			// 			try {
+			// 				var date1 = new Date(a.results[i].EventDate);
+			// 				var date2 = new Date(date1.getUTCFullYear(), date1.getUTCMonth(), date1.getUTCDate());
+			// 				date = date2;
+			// 			} catch (o) {
+			// 				date = new Date(a.results[i].EventDate);
+			// 			}
+			// 			a.results[i].EventDate = date;
 			// 			switch (a.results[i].Status) {
 			// 				case "APPROVED":
 			// 					a.results[i].Type = sap.ui.unified.CalendarDayType.Type08;
 			// 					a.results[i].Tooltip = that.oBundle.getText("approved");
 			// 					break;
 			// 				case "POSTED":
-			// 					a.results[i].Type = sap.ui.unified.CalendarDayType.Type09;
+			// 					a.results[i].Type = sap.ui.unified.CalendarDayType.Type08;
 			// 					a.results[i].Tooltip = that.oBundle.getText("approved");
 			// 					break;
 			// 				case "REJECTED":
@@ -2065,6 +2142,18 @@ sap.ui.define([
 			// 				case "SENT":
 			// 					a.results[i].Type = sap.ui.unified.CalendarDayType.Type00;
 			// 					a.results[i].Tooltip = that.oBundle.getText("sent");
+			// 					break;
+			// 				case "HOLIDAY":
+			// 					a.results[i].Type = sap.ui.unified.CalendarDayType.Type09;
+			// 					if (a.results[i].StatusText != "") {
+			// 						a.results[i].Tooltip = a.results[i].StatusText;
+			// 					} else {
+			// 						a.results[i].Tooltip = that.oBundle.getText("holiday");
+			// 					}
+			// 					break;
+			// 				case "NONWORKING":
+			// 					a.results[i].Type = sap.ui.unified.CalendarDayType.NonWorking;
+			// 					a.results[i].Tooltip = that.oBundle.getText("nonworking");
 			// 					break;
 			// 			}
 			// 			that.calendar.addSpecialDate(new sap.ui.unified.DateTypeRange({
@@ -2078,8 +2167,6 @@ sap.ui.define([
 			// 				tooltip: a.results[i].Tooltip
 			// 			}));
 
-
-
 			// 		}
 			// 		that.calendar.setBusy(false);
 			// 	},
@@ -2089,18 +2176,10 @@ sap.ui.define([
 			// 	}
 			// };
 			// this.byId('calendar').setBusy(true);
-
-			// var oServiceURI = this.getOwnerComponent().getMetadata().getManifestEntry("sap.app").dataSources["timeEventService"].uri;
-
-			// this.oDataModel = new sap.ui.model.odata.ODataModel(oServiceURI + "/odata/SAP/HCMFAB_MYTIMEEVENTS_SRV", false);
-			// // this.oDataModel.setHeaders({"Accept" : "application/json"});
-
 			// this.oDataModel
 			// 	.read(
 			// 		"/TimeEventSet",
 			// 		mParameters);
-
-
 		},
 		/**
 		 * Called when application is busy in loading data.
@@ -2136,20 +2215,96 @@ sap.ui.define([
 		 */
 		getConfiguration: function () {
 			var that = this;
+			//Replaced code below with local DB Find
+			// var oModel = new sap.ui.model.json.JSONModel();
+			// this.setGlobalModel(oModel, "configurationModel");
+			// var that = this;
 			// this.showBusy();
 			// var b = new sap.ui.model.Filter({
 			// 	path: "EmployeeID",
 			// 	operator: sap.ui.model.FilterOperator.EQ,
-			// 	value1: ""
+			// 	value1: this.empID
 			// });
-			var f = [];
+			// var f = [];
 			// f.push(b);
-			//Code added by Sumanth
-			// var oModel = new sap.ui.model.json.JSONModel();
+			// var mParameters = {
+			// 	filters: f, // your Filter Array
+			// 	success: function (data) {
+			// 		//attempt to release Busy Dialog
+			// 		that.hideBusy();
+			// 		oModel.setData(data.results[0]);
+			// 		that.configuration = data.results[0];
+			// 		that.getView().setModel(oModel, "configurationModel");
+			// 		that.byId("idTimeEventType").setSelectedKey(that.configuration.DefaultEvent);
+			// 		that.onSelectionChange(null, that.configuration.DefaultEvent);
+			// 		that.byId("approver").setValue(that.configuration.ApproverName);
+			// 		that.approverIdSelected = that.configuration.ApproverId;
+			// 		var curDate = new Date();
+			// 		if (that.configuration.CreateAllowed) {
+			// 			if (!that.configuration.PresentDayFlag) {
+			// 				that.byId("save").setEnabled(false);
+			// 			} else {
+			// 				that.byId("save").setEnabled(true);
+			// 			}
+			// 		} else {
+			// 			that.byId("save").setEnabled(false);
+			// 		}
+			// 		if (that.configuration.PresentDayFlag) {
+			// 			if (that.configuration.CreateAllowed) {
+			// 				that.byId("save").setEnabled(true);
+			// 			} else {
+			// 				that.byId("save").setEnabled(false);
+			// 			}
+			// 		} else {
+			// 			if (that.configuration.CreateAllowed) {
+			// 				that.byId("save").setEnabled(true);
+			// 			} else {
+			// 				that.byId("save").setEnabled(false);
+			// 			}
+			// 		}
+			// 		that.byId("datePicker").setDateValue(new Date());
+			// 		// }
+			// 		if (that.configuration.TimeReadOnly) {
+			// 			that.byId("timePicker").setEnabled(false);
+			// 			that.byId("timePicker").setDateValue(new Date());
+			// 		} else {
+			// 			that.byId("timePicker").setEnabled(true);
+			// 			that.byId("timePicker").setDateValue(new Date());
+			// 		}
+			// 		//replace once the model changes
+			// 		if (that.configuration.ApproverReadOnly === 'X') {
+			// 			that.byId("approver").setEnabled(false);
+			// 		} else {
+			// 			that.byId("approver").setEnabled(true);
+			// 		}
+			// 		if (that.configuration.NoticeVisible === 'X') {
+			// 			that.byId("comments").setVisible(true);
+			// 			that.byId("commentsLableId").setVisible(true);
+			// 		} else {
+			// 			that.byId("comments").setVisible(false);
+			// 			that.byId("commentsLableId").setVisible(false);
+			// 		}
+			// 		if (that.configuration.ApproverVisible === 'X') {
+			// 			that.byId("approver").setVisible(true);
+			// 			that.byId("approverLableId").setVisible(true);
+			// 		} else {
+			// 			that.byId("approver").setVisible(false);
+			// 			that.byId("approverLableId").setVisible(false);
+			// 		}
 
-
-			// this.setGlobalModel(oModel, "configurationModel");
-
+			// 		//Allow deletions or not
+			// 		if (!that.configuration.DeleteAllowed) {
+			// 			that.byId("idEventsTable").setMode("None");
+			// 		}
+			// 	},
+			// 	error: function (oError) {
+			// 		that.hideBusy();
+			// 		that.processError(oError);
+			// 	}
+			// };
+			// this.oDataModel.read(
+			// 	"/ConfigurationSet",
+			// 	mParameters);
 
 			db.find({ module: "ConfigurationSet" }, function (err, data) {
 				var oModel = new sap.ui.model.json.JSONModel();
@@ -2200,163 +2355,6 @@ sap.ui.define([
 				}
 
 			})
-
-
-			// this.oDataModel.read(
-			// 	"/ConfigurationSet", {
-			// 	filters: f,
-
-			// 	success: function (oData, oResponse) {
-			// 		that.hideBusy();
-			// 		var data = oData.results[0];
-			// 		// var data1 = oData.results;
-			// 		oModel.setData(data);
-			// 		that.setModel(oModel, "ConfigurationSet");
-			// 		that.setGlobalModel(oModel, "configurationModel");
-			// 		that.setModel(oModel, "configurationModel");
-			// 		// that.byId("empID").setText(data.EmployeeID);
-			// 		that.setModel(oModel, "configurationType");
-			// 		that.byId("idEventsTable").setMode("None");
-			// 		                    //db code starts
-			// 							if (Object.keys(data).length) {
-			// 								db.insert({ getConfiguration: data }, function (err, records) {
-			// 									console.log('Insert Get Configuration COnfiguration Set', records)
-			// 								})
-			// 								// To retrieve Data 
-
-			// 								//db.find({ getConfiguration: data }, function (err, records) {
-			// 								//  console.log('Get Configuration COnfiguration Set', records)
-			// 								//})
-			// 								//
-
-			// 							}
-
-			// 							//db code ends
-			// 		that.configuration = oData.results[0];
-			// 		that.onSelectionChange(null, that.configuration.DefaultEvent);
-			// 		that.byId("approver").setValue(that.configuration.ApproverName);
-			// 		that.approverIdSelected = that.configuration.ApproverId;
-			// 		var curDate = new Date();
-			// 		that.byId("datePicker").setDateValue(new Date());
-			// 		if (that.configuration.TimeReadOnly) {
-			// 			that.byId("timePicker").setEnabled(false);
-			// 			that.byId("timePicker").setDateValue(new Date());
-			// 		} else {
-			// 			that.byId("timePicker").setEnabled(true);
-			// 			that.byId("timePicker").setDateValue(new Date());
-			// 		}
-			// 		//replace once the model changes
-			// 		if (that.configuration.ApproverReadOnly === 'X') {
-			// 			that.byId("approver").setEnabled(false);
-			// 		} else {
-			// 			that.byId("approver").setEnabled(true);
-			// 		}
-			// 		if (that.configuration.NoticeVisible === 'X') {
-			// 			that.byId("comments").setVisible(true);
-			// 			that.byId("commentsLableId").setVisible(true);
-			// 		} else {
-			// 			that.byId("comments").setVisible(false);
-			// 			that.byId("commentsLableId").setVisible(false);
-			// 		}
-			// 		if (that.configuration.ApproverVisible === 'X') {
-			// 			that.byId("approver").setVisible(true);
-			// 			that.byId("approverLableId").setVisible(true);
-			// 		} else {
-			// 			that.byId("approver").setVisible(false);
-			// 			that.byId("approverLableId").setVisible(false);
-			// 		}
-			// 		//Allow deletions or not
-			// 		if (!that.configuration.DeleteAllowed) {
-			// 			that.byId("idEventsTable").setMode("None");
-			// 		}
-			// 	},
-			// 	error: function (oError) {
-			// 		console.log("in Error");
-			// 		that.hideBusy();
-			// 		that.processError(oError);
-			// 	}
-			// });
-			//Code Added end by Sumanth
-			//Commented by Sumanth
-			// var mParameters = {
-			// 	filters: f, // your Filter Array
-			// 	success: function(data) {
-			// 		//attempt to release Busy Dialog
-			// 		that.hideBusy();
-			// 		oModel.setData(data.results[0]);
-			// 		that.configuration = data.results[0];
-			// 		that.getView().setModel(oModel, "configurationModel");
-			// 		that.byId("idTimeEventType").setSelectedKey(that.configuration.DefaultEvent);
-			// 		that.onSelectionChange(null, that.configuration.DefaultEvent);
-			// 		that.byId("approver").setValue(that.configuration.ApproverName);
-			// 		that.approverIdSelected = that.configuration.ApproverId;
-			// 		var curDate = new Date();
-			// 		// if (that.configuration.CreateAllowed) {
-			// 		// 	if (!that.configuration.PresentDayFlag) {
-			// 		// 		that.byId("save").setEnabled(false);
-			// 		// 	} else {
-			// 		// 		that.byId("save").setEnabled(true);
-			// 		// 	}
-			// 		// } else {
-			// 		// 	that.byId("save").setEnabled(false);
-			// 		// }
-			// 		// if (that.configuration.PresentDayFlag) {
-			// 		// 	if (that.configuration.CreateAllowed) {
-			// 		// 		that.byId("save").setEnabled(true);
-			// 		// 	} else {
-			// 		// 		that.byId("save").setEnabled(false);
-			// 		// 	}
-			// 		// } else {
-			// 		// 	if (that.configuration.CreateAllowed) {
-			// 		// 		that.byId("save").setEnabled(true);
-			// 		// 	} else {
-			// 		// 		that.byId("save").setEnabled(false);
-			// 		// 	}
-			// 		// }
-			// 		that.byId("datePicker").setDateValue(new Date());
-			// 		// }
-			// 		if (that.configuration.TimeReadOnly) {
-			// 			that.byId("timePicker").setEnabled(false);
-			// 			that.byId("timePicker").setDateValue(new Date());
-			// 		} else {
-			// 			that.byId("timePicker").setEnabled(true);
-			// 			that.byId("timePicker").setDateValue(new Date());
-			// 		}
-			// 		//replace once the model changes
-			// 		if (that.configuration.ApproverReadOnly === 'X') {
-			// 			that.byId("approver").setEnabled(false);
-			// 		} else {
-			// 			that.byId("approver").setEnabled(true);
-			// 		}
-			// 		if (that.configuration.NoticeVisible === 'X') {
-			// 			that.byId("comments").setVisible(true);
-			// 			that.byId("commentsLableId").setVisible(true);
-			// 		} else {
-			// 			that.byId("comments").setVisible(false);
-			// 			that.byId("commentsLableId").setVisible(false);
-			// 		}
-			// 		if (that.configuration.ApproverVisible === 'X') {
-			// 			that.byId("approver").setVisible(true);
-			// 			that.byId("approverLableId").setVisible(true);
-			// 		} else {
-			// 			that.byId("approver").setVisible(false);
-			// 			that.byId("approverLableId").setVisible(false);
-			// 		}
-
-			// 		//Allow deletions or not
-			// 		if (!that.configuration.DeleteAllowed) {
-			// 			that.byId("idEventsTable").setMode("None");
-			// 		}
-			// 	},
-			// 	error: function(oError) {
-			// 		that.hideBusy();
-			// 		that.processError(oError);
-			// 	}
-			// };
-			// this.oDataModel.read(
-			// 	"/ConfigurationSet",
-			// 	mParameters);
-			//Comment End by Sumanth
 		},
 		/**
 		 * Called when user create time event.
@@ -2403,11 +2401,12 @@ sap.ui.define([
 						let timeStampToAppend = dateParse.format(currentDate);
 						var appStatus;
 						if (navigator.onLine || window.networkStatus === 'Online') {
-							appStatus = "D".concat(navigator.platform.substr(0, 1), "ONL") + timeStampToAppend;
+							appStatus = "D".concat(navigator.platform.substr(0, 1), "ONL") + timeType + timeStampToAppend;
 						}
 						else {
-							appStatus = "D".concat(navigator.platform.substr(0, 1), "OFL") + timeStampToAppend;
+							appStatus = "D".concat(navigator.platform.substr(0, 1), "OFL") + timeType + timeStampToAppend;
 						}
+						var punchType = timeType + timeStampToAppend;
 						// var employeeId = this.byId("empID").getText();
 						timezoneOffset = timezoneOffset.toFixed(2);
 						var obj = {
@@ -2419,7 +2418,9 @@ sap.ui.define([
 							TimezoneOffset: timezoneOffset.toString(),
 							CUSTOMER01: latitude.toString(),
 							CUSTOMER02: longitude.toString(),
-							CUSTOMER05: appStatus
+							CUSTOMER05: appStatus,
+							CUSTOMER06: punchType,
+							CUSTOMER07: localStorage.getItem('osHostName')
 						};
 						that.selectedDate = new Date();
 						date.setMonth(date.getMonth() - 1, 1);
@@ -2453,7 +2454,7 @@ sap.ui.define([
 							console.log("Error in inserting TimeEventSetIndividual", err)
 						} else if (entities) {
 							that.busyDialog.close();
-							//Online Sync code starts
+							//Online record creation attempt
 							if (navigator.onLine || window.networkStatus === 'Online') {
 								var oDataModel = new sap.ui.model.odata.v2.ODataModel({
 									serviceUrl: oServiceURI + '/odata/SAP/HCMFAB_MYTIMEEVENTS_SRV',
@@ -2481,12 +2482,11 @@ sap.ui.define([
 													// reject();
 												}
 												else {
-													/* 													that.hideBusy();
-																										var toastMsg = that.oBundle.getText("timeEventCreated");
-																					
-																										sap.m.MessageToast.show(toastMsg, {
-																											duration: 3000 
-																										}); */
+ 													// that.hideBusy();
+													// var toastMsg = that.oBundle.getText("timeEventCreated");
+													// sap.m.MessageToast.show(toastMsg, {
+													// 	duration: 3000 
+													// });
 												}
 											});
 										// })
@@ -2497,14 +2497,12 @@ sap.ui.define([
 
 								});
 							}
-							//Offline Sync Code Ends
+							//Online record creation attempt end
 							that.hideBusy();
 							var toastMsg = that.oBundle.getText("timeEventCreated");
-
 							sap.m.MessageToast.show(toastMsg, {
 								duration: 3000
 							});
-
 							if (sap.ui.Device.system.phone === true) {
 								that.mCalendar.setDateValue(that.selectedDate);
 							} else {
@@ -2526,9 +2524,6 @@ sap.ui.define([
 				}
 			})
 			// this.showBusy();
-
-
-
 		},
 		/**
 		 * Called when user create time event.

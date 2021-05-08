@@ -72,6 +72,7 @@ app.on('window-all-closed', () => {
 myapp.get('/electron', (req, res, next) => {
 
   let osUserName = os.userInfo().username;
+  let osHostName = os.hostname();
   let accessTokenAccount = osUserName + "accessToken";
   let refreshTokenAccount = osUserName + 'refreshToken';
   let accessTokenExpiresAccount = osUserName + 'accessTokenExpires';
@@ -96,7 +97,8 @@ myapp.get('/electron', (req, res, next) => {
           // console.log('Data after jwt conversion', data)
           res.json({
             accessToken: new Buffer(token).toString('base64'),
-            refreshToken: new Buffer(refreshToken).toString('base64')
+            refreshToken: new Buffer(refreshToken).toString('base64'),
+            osHostName
           })
           // res.send(data)
         }
