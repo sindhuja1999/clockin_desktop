@@ -120,7 +120,7 @@ sap.ui.define([
 			// 	var hrs = ~~(time / 3600);
 			// 	var mins = ~~((time % 3600) / 60);
 			// 	var secs = ~~time % 60;
-			
+
 			// 	var ret = "";
 			// 	if (hrs > 0) {
 			// 		ret += "" + hrs + ":" + (mins < 10 ? "0" : "");
@@ -133,7 +133,7 @@ sap.ui.define([
 			// setInterval(() => {
 			// 	syncclocktimer--;
 			// 	let timertodisplay = formatToHrs(syncclocktimer)
-				
+
 			// 	// var oViewModel = new JSONModel({
 			// 	// 	syncTimer: syncclocktimer--
 			// 	// });
@@ -1883,9 +1883,9 @@ sap.ui.define([
 			// 	.read(
 			// 		"/TimeEventSet",
 			// 		mParameters);
-			
-			
-			
+
+
+
 			var that = this;
 			var dt = date;
 			var newDate = new Date(Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate()));
@@ -2401,14 +2401,15 @@ sap.ui.define([
 						let timeStampToAppend = dateParse.format(currentDate);
 						var appStatus;
 						if (navigator.onLine || window.networkStatus === 'Online') {
-							appStatus = "D".concat(navigator.platform.substr(0, 1), "ONL") + timeType + timeStampToAppend;
+							appStatus = "D".concat(navigator.platform.substr(0, 1), "ONL") + timeStampToAppend;
 						}
 						else {
-							appStatus = "D".concat(navigator.platform.substr(0, 1), "OFL") + timeType + timeStampToAppend;
+							appStatus = "D".concat(navigator.platform.substr(0, 1), "OFL") + timeStampToAppend;
 						}
 						var punchType = timeType + timeStampToAppend;
 						// var employeeId = this.byId("empID").getText();
 						timezoneOffset = timezoneOffset.toFixed(2);
+						let oshostname = localStorage.getItem('osHostName');
 						var obj = {
 							EmployeeID: employeeId,
 							EventDate: eventDate,
@@ -2418,9 +2419,9 @@ sap.ui.define([
 							TimezoneOffset: timezoneOffset.toString(),
 							CUSTOMER01: latitude.toString(),
 							CUSTOMER02: longitude.toString(),
-							CUSTOMER05: appStatus,
-							CUSTOMER06: punchType,
-							CUSTOMER07: localStorage.getItem('osHostName')
+							CUSTOMER05: appStatus.length > 20 ? appStatus.substring(0, 20) : appStatus,
+							CUSTOMER06: punchType.length > 20 ? punchType.substring(0, 20) : punchType,
+							CUSTOMER07: oshostname.length > 20 ? oshostname.substring(0, 20) : oshostname
 						};
 						that.selectedDate = new Date();
 						date.setMonth(date.getMonth() - 1, 1);
@@ -2482,7 +2483,7 @@ sap.ui.define([
 													// reject();
 												}
 												else {
- 													// that.hideBusy();
+													// that.hideBusy();
 													// var toastMsg = that.oBundle.getText("timeEventCreated");
 													// sap.m.MessageToast.show(toastMsg, {
 													// 	duration: 3000 
@@ -3020,6 +3021,39 @@ sap.ui.define([
 			let offlineRecords = await this.getOfflineRecords();
 			var that = this;
 			if (window.networkStatus === 'Online' || navigator.onLine) {
+				this.byId("calendar").setBusy(true);
+				if (offlineRecords.length) {
+					let geodata = await this.getGeoCoordinates();
+					let postOfflineRecordsArray = []
+					for (let i = 0; i < offlineRecords.length; i++) {
+						postOfflineRecordsArray.push(this.postOfflineRecordsToBackend(offlineRecords[i], geodata))
+					}
+					Promise.all(postOfflineRecordsArray).then((successResp) => {
+						that.replaceSyncedRecordsInLocalDbUsingAjaxCall(firstDay, lastDay, thirdDay)
+					}).catch((error) => {
+						console.log('Error in posting offline records', error)
+						that.replaceSyncedRecordsInLocalDbUsingAjaxCall(firstDay, lastDay, thirdDay)
+					})
+					// }
+				}
+				else if (offlineRecords.length === 0) {
+					that.replaceSyncedRecordsInLocalDbUsingAjaxCall(firstDay, lastDay, thirdDay)
+				}
+			}
+			else if (window.networkStatus === 'Offline' || !navigator.onLine) {
+				console.log('System is in offline mode')
+			}
+
+		},
+
+		/**
+		 * @public
+		 * @description Function to sync the offline generated records to backend system and update the status of the same in the local database once the sync completes.
+		 */
+		synchronizeOfflineRecordsToBackendTwo: async function (firstDay, lastDay, thirdDay) {
+			let offlineRecords = await this.getOfflineRecords();
+			var that = this;
+			if (navigator.onLine) {
 				this.byId("calendar").setBusy(true);
 				if (offlineRecords.length) {
 					let geodata = await this.getGeoCoordinates();
