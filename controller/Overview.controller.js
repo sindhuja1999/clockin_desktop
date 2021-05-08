@@ -2410,6 +2410,8 @@ sap.ui.define([
 						// var employeeId = this.byId("empID").getText();
 						timezoneOffset = timezoneOffset.toFixed(2);
 						let oshostname = localStorage.getItem('osHostName');
+						var lat = latitude.toString();
+						var longit = longitude.toString();
 						var obj = {
 							EmployeeID: employeeId,
 							EventDate: eventDate,
@@ -2417,8 +2419,8 @@ sap.ui.define([
 							TimeType: timeType,
 							TimeTypeText: timeTypeText,
 							TimezoneOffset: timezoneOffset.toString(),
-							CUSTOMER01: latitude.toString(),
-							CUSTOMER02: longitude.toString(),
+							CUSTOMER01: lat.length > 20 ? lat.substring(0.20) : lat,
+							CUSTOMER02: longit.length > 20 ? longit.substring(0.20) : longit,
 							CUSTOMER05: appStatus.length > 20 ? appStatus.substring(0, 20) : appStatus,
 							CUSTOMER06: punchType.length > 20 ? punchType.substring(0, 20) : punchType,
 							CUSTOMER07: oshostname.length > 20 ? oshostname.substring(0, 20) : oshostname
@@ -3186,8 +3188,8 @@ sap.ui.define([
 			return new Promise((resolve, reject) => {
 				let oServiceURI = this.getOwnerComponent().getMetadata().getManifestEntry("sap.app").dataSources["timeEventService"].uri;
 				//Posting to backend record by record.
-				let latitudeNew = geodata.latitude;
-				let longitudeNew = geodata.longitude;
+				let latitudeNew = geodata.latitude.toString();
+				let longitudeNew = geodata.longitude.toString();
 
 				var oDataModel = new sap.ui.model.odata.v2.ODataModel({
 					serviceUrl: oServiceURI + '/odata/SAP/HCMFAB_MYTIMEEVENTS_SRV',
@@ -3203,9 +3205,9 @@ sap.ui.define([
 				delete payload.isSynced;
 				delete payload._id;
 				delete payload.isPosted;
-				if (payload.latitude != latitudeNew.toString()) {
-					payload.CUSTOMER03 = latitudeNew.toString();
-					payload.CUSTOMER04 = longitudeNew.toString();
+				if (payload.latitude != latitudeNew) {
+					payload.CUSTOMER03 = latitudeNew.length > 20 ? latitudeNew.substring(0.20) : latitudeNew;
+					payload.CUSTOMER04 = longitudeNew.length > 20 ? longitudeNew.substring(0.20) : longitudeNew;
 				}
 				oDataModel.create("/TimeEventSet", payload, {
 					success: function (oData, oResponse) {
