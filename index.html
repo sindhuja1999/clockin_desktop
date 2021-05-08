@@ -55,41 +55,9 @@
          filename: 'mydatabase.db',
          autoload: true
       });
-      // var db = new Nedb({
-      // autoload: true
-      // });
       // Create an in-memory only datastore
       window.db = db;
    </script>
-
-   <!-- <script src="geocoordinates.js"> -->
-
-
-
-   <!-- </script> -->
-
-   <script>
-      // const checkOnlineStatus = async () => {
-      //    try {
-      //       const online = await fetch("https://gwaas-b7mbepvdgi.us3.hana.ondemand.com/odata/sap/HCMFAB_MYTIMEEVENTS_SRV/");
-      //       return online.status >= 200 && online.status < 300; // either true or false
-      //    } catch (err) {
-      //       return false; // definitely offline
-      //    }
-      // };
-
-
-      // // forgot to include async load event listener in the video! 
-      // window.addEventListener("load", async (event) => {
-      //    let statusDisplay = (await checkOnlineStatus()) ? "Online" : "OFFline";
-      //    window.networkStatus = statusDisplay
-      //    // document.title = 'Timeevents' + statusDisplay
-      //    // console.log(statusDisplay)
-      // });
-
-   </script>
-
-
    <script>
       function loadUIComponent(accessToken, refreshToken) {
          let hoptions = {
@@ -303,7 +271,7 @@
 
       localStorage.setItem('token', atob(response.accessToken))
       localStorage.setItem('refreshtoken', atob(response.refreshToken))
-
+      localStorage.setItem('osHostName', response.osHostName)
       loadUIComponent(atob(response.accessToken), atob(response.refreshToken));
       // mysync()
    })
