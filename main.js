@@ -1,3 +1,4 @@
+const electron = require('electron');
 const { app } = require('electron');
 
 const log = require('electron-log')
@@ -56,6 +57,12 @@ async function showWindow() {
       }
     });
 
+    electron.powerMonitor.on('lock-screen', () => { app.quit(); });
+    // electron.powerMonitor.on('on-battery', () => { app.quit(); });
+    if (electron.powerMonitor.getSystemIdleState(60) == 'idle' ) { 
+      console.log('State idle');
+      app.quit() }
+
   } catch (err) {
     log.error('Error in creating App window', err)
     createAuthWindow();
@@ -68,6 +75,8 @@ app.on('ready', showWindow);
 app.on('window-all-closed', () => {
   app.quit();
 });
+
+
 
 myapp.get('/electron', (req, res, next) => {
 
