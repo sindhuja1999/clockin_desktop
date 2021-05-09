@@ -50,8 +50,9 @@ module.exports = async function (params) {
         await electron_notarize.notarize({
             appBundleId: appId,
             appPath: appPath,
-            appleId: 'rpp4001@med.cornell.edu',
-            appleIdPassword: 'bcwq-jcvj-prbj-opvr',
+            ascProvider: 'N7T323633C',
+            appleId: 'sut2008@med.cornell.edu',
+            appleIdPassword: 'kwfh-zglu-kuet-iymp',
         });
     } catch (error) {
         console.error(error);
