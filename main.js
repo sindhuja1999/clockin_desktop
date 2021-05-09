@@ -1,3 +1,4 @@
+const electron = require('electron');
 const { app } = require('electron');
 
 const log = require('electron-log')
@@ -55,6 +56,14 @@ async function showWindow() {
         createAuthWindow(authenticationService);
       }
     });
+    electron.powerMonitor.on('lock-screen', () => { app.quit(); });
+    setInterval(() => {
+      let a = electron.powerMonitor.getSystemIdleTime()
+      if (a == 30 * 60 * 1000) {
+        console.log('Entering Idle State of the app, as the app is idle for 30 minutes.')
+        app.quit();
+      }
+    }, 600 * 1000)
 
   } catch (err) {
     log.error('Error in creating App window', err)
