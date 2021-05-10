@@ -1,3 +1,4 @@
+const electron = require('electron');
 const { app } = require('electron');
 
 const log = require('electron-log')
@@ -55,6 +56,14 @@ async function showWindow() {
         createAuthWindow(authenticationService);
       }
     });
+    electron.powerMonitor.on('lock-screen', () => { app.quit(); });
+    setInterval(() => {
+      let a = electron.powerMonitor.getSystemIdleTime()
+      if (a == 30 * 60 * 1000) {
+        console.log('Entering Idle State of the app, as the app is idle for 30 minutes.')
+        app.quit();
+      }
+    }, 600 * 1000)
 
   } catch (err) {
     log.error('Error in creating App window', err)
@@ -72,6 +81,7 @@ app.on('window-all-closed', () => {
 myapp.get('/electron', (req, res, next) => {
 
   let osUserName = os.userInfo().username;
+  let osHostName = os.hostname();
   let accessTokenAccount = osUserName + "accessToken";
   let refreshTokenAccount = osUserName + 'refreshToken';
   let accessTokenExpiresAccount = osUserName + 'accessTokenExpires';
@@ -96,7 +106,8 @@ myapp.get('/electron', (req, res, next) => {
           // console.log('Data after jwt conversion', data)
           res.json({
             accessToken: new Buffer(token).toString('base64'),
-            refreshToken: new Buffer(refreshToken).toString('base64')
+            refreshToken: new Buffer(refreshToken).toString('base64'),
+            osHostName
           })
           // res.send(data)
         }
