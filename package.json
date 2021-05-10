@@ -41,6 +41,7 @@
       "guid": "+CLzPKrN7E+4IkxkqMUUzg==",
       "oneClick": true,
       "runAfterFinish": false,
+      "shortcutName": "Clock-In",
       "include": "build/installer.nsh"
     },
     "mac": {
