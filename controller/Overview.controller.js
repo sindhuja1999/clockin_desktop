@@ -2396,7 +2396,7 @@ sap.ui.define([
 						var employeeId = customData.EmployeeID;
 						let currentDate = new Date();
 						var dateParse = sap.ui.core.format.DateFormat.getDateInstance({
-							pattern: "yyyyMMddhhmmss"
+							pattern: "yyyyMMddHHmmss"
 						});
 						let timeStampToAppend = dateParse.format(currentDate);
 						var appStatus;

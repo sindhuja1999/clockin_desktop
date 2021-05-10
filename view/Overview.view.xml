@@ -18,9 +18,9 @@
 			<Text text="{userDetails>/FormattedName}"/>
 			<Text text="              "/>
 			<ToolbarSpacer />
-			<Text text="{networkStatusModel>/networkStatus}" class="a"/>
+			<!-- <Text text="{networkStatusModel>/networkStatus}" class="a"/> -->
 			<!-- <Text text="{window>/networkstatus}" class="a"/> -->
-			<Text text="Next sync in {syncModel>/syncTimer} seconds" class="sapUiSmallMarginEnd"/>
+			<!-- <Text text="Next sync in {syncModel>/syncTimer} seconds" class="sapUiSmallMarginEnd"/> -->
 			</tnt:ToolHeader>
 			<IconTabBar id="idIconTabBarNoIcons" expanded="{device>/isNoPhone}" class="sapUiResponsiveContentPadding" select="onSelect"
 				expandable="false">
