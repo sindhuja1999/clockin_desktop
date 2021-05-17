@@ -43,6 +43,7 @@ sap.ui.define([
 		}
 	}
 	let syncclocktimer = 7200;
+	let isProcessStarted = false;
 	return BaseController.extend("edu.weill.Timeevents.controller.Overview", {
 		/* =========================================================== */
 		/* controller hooks                                            */
@@ -167,9 +168,12 @@ sap.ui.define([
 							that.synchronizeOfflineRecordsToBackend(now1, then1, date)
 						} */
 
+					// if (that.selectedTab == "quickEntry" && !isProcessStarted) {
 					if (that.selectedTab == "quickEntry") {
-						that.synchronizeOfflineRecordsToBackend(now1, then1, date)
+						// that.synchronizeOfflineRecordsToBackend(now1, then1, date)
+						that.synchronizeOfflineRecordsToBackend(new Date(), new Date(), new Date())
 					}
+					// else if (that.selectedTab == "eventList" && !isProcessStarted) {
 					else if (that.selectedTab == "eventList") {
 						that.synchronizeOfflineRecordsToBackend(now1, then1, that.selectedDate)
 					}
@@ -228,6 +232,8 @@ sap.ui.define([
 					fnReject();
 				}
 			).then(that.initCalendar(that.empID)).then(that.synchronizeOfflineRecordsToBackend(new Date(), new Date(), new Date())) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
+			// ).then(that.initCalendar(that.empID)).then(that.synchronizeOfflineRecordsToBackendTwo(new Date(), new Date(), new Date())) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
+			// ).then(that.initCalendar(that.empID)).then(that.synchronizeOfflineRecordsForCurrentDay(new Date())) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
 
 			var date = new Date();
 			var selectedTab;
@@ -3049,45 +3055,189 @@ sap.ui.define([
 		},
 
 		/**
-		 * @public
-		 * @description Function to sync the offline generated records to backend system and update the status of the same in the local database once the sync completes.
+		 * 
+		 * @param {Date} firstDay 
+		 * @param {Date} lastDay 
+		 * @param {Date} thirdDay 
+		 * @description Function to sync the offline records for current day by fetching the current day records and comparing them and update them locally, if any 
+		 * records found true offline they need to be pushed to the backend.
 		 */
-		synchronizeOfflineRecordsToBackendTwo: async function (firstDay, lastDay, thirdDay) {
-			let offlineRecords = await this.getOfflineRecords();
-			var that = this;
-			if (navigator.onLine) {
-				this.byId("calendar").setBusy(true);
-				if (offlineRecords.length) {
+		synchronizeOfflineRecordsForCurrentDay: async function (firstDay) {
+			let onlinerecords = await this.fetchOnlineRecordsUsingAjaxCall(firstDay, lastDay); //fetching the online records for the current day, both parameters are same
+			let offlinerecords = await this.fetchRecordsFromLocalDb(firstDay, '', false);// fetch the offline non synced records from the local database.
+			let localsyncedrecords = await this.fetchRecordsFromLocalDb(firstDay, '', true);// fetch the synced records from the local database.
+			console.log('onlinerecords obtained', onlinerecords);
+			console.log('offlinerecords obtained ==>', offlinerecords);
+			console.log('localsyncedrecords obtained ==>', localsyncedrecords);
+			let offlinerecordstopush = [], offlinerecordstoupdate = [], localsyncedrecordstoupdate = [], onlinerecordstoinsert = [];
+
+			if (offlinerecords.length) {
+				//Checking offline records with C6 field to compare the offline records that need to be pushed to the server.
+				// offlinerecordstopush = onlinerecords.filter(o1 => offlinerecords.some(o2 => (o1.CUSTOMER06 !== o2.CUSTOMER06 && o2.CUSTOMER06)))
+				offlinerecordstopush = offlinerecords.filter(o1 => onlinerecords.some(o2 => (o2.CUSTOMER06 && o1.CUSTOMER06 != o2.CUSTOMER06)))
+				//If there are any online records present in the local db which are marked as offline, by checking the status we will update the status locally.
+				// offlinerecordstoupdate = onlinerecords.filter(o1 => offlinerecords.some(o2 => (o1.CUSTOMER06 == o2.CUSTOMER06 && o2.CUSTOMER06)))
+				offlinerecordstoupdate = offlinerecords.filter(o1 => onlinerecords.some(o2 => (o2.CUSTOMER06 && o1.CUSTOMER06 == o2.CUSTOMER06)))
+				//match with the online records and if there are any matching update the status.
+
+
+
+				// Push All the offline records with a promise call.
+				if (offlinerecordstopush.length) {
+					let postOfflineRecordsArray = [];
 					let geodata = await this.getGeoCoordinates();
-					let postOfflineRecordsArray = []
-					for (let i = 0; i < offlineRecords.length; i++) {
-						postOfflineRecordsArray.push(this.postOfflineRecordsToBackend(offlineRecords[i], geodata))
+
+					for (let value of offlinerecordstopush) {
+						postOfflineRecordsArray.push(this.postOfflineRecordsToBackend(value, geodata))
 					}
-					Promise.all(postOfflineRecordsArray).then((successResp) => {
-						that.replaceSyncedRecordsInLocalDbUsingAjaxCall(firstDay, lastDay, thirdDay)
+					Promise.all(postOfflineRecordsArray).then((data) => {
+						console.log('In Success Callback', data)
 					}).catch((error) => {
-						console.log('Error in posting offline records', error)
-						that.replaceSyncedRecordsInLocalDbUsingAjaxCall(firstDay, lastDay, thirdDay)
+						console.log('Error in posting the offline records to ecc endpoint', error)
 					})
-					// }
 				}
-				else if (offlineRecords.length === 0) {
-					that.replaceSyncedRecordsInLocalDbUsingAjaxCall(firstDay, lastDay, thirdDay)
+
+				//Call synchronizeAllOfflineRecords function once done with the current day to process the offline records dating to one week back from previous day
+
+				//if there are any matches that indicates some of them were not updated locally but present in the server. We need to update the status of such records
+				//locally indicating that they are synced.
+				if (offlinerecordstoupdate.length) {
+					let updateLocalDbRecordsArray = [];
+					for (let record of offlinerecordstoupdate) {
+						updateLocalDbRecordsArray.push(this.updateRecordStatusInLocalDb(record, record.CUSTOMER06, 'CUSTOMER06'))
+					}
+					if (updateLocalDbRecordsArray.length) {
+						Promise.all(updateLocalDbRecordsArray).then((data) => {
+							console.log('In Success Call back after updating the local db records status in synchronizeOfflineRecordsForCurrentDay function', data)
+						}).catch((error) => {
+							console.log('Error in updating the record status in local db in synchronizeOfflineRecordsForCurrentDay function', error)
+						})
+					}
 				}
+
+
 			}
-			else if (window.networkStatus === 'Offline' || !navigator.onLine) {
-				console.log('System is in offline mode')
+			if (onlinerecords.length) {
+				// localsyncedrecordstoupdate = localsyncedrecords.filter(o1 => onlinerecords.some(o2 => (o1.EventTime == o2.EventTime && o2.EventTime)))
+				localsyncedrecordstoupdate = localsyncedrecords.filter(o1 => onlinerecords.some(o2 => (o2.CUSTOMER06 && o1.CUSTOMER06 == o2.CUSTOMER06)))
+				//==>Update Case 
+				//if any local synced records are updated at the backend, by making a comparision check and update the same in the local database.
+				let updateLocalDbRecordsArray = [];
+				for (let record of localsyncedrecordstoupdate) {
+					updateLocalDbRecordsArray.push(this.updateRecordStatusInLocalDb(record, record.CUSTOMER06, 'CUSTOMER06'))
+				}
+				if (updateLocalDbRecordsArray.length) {
+					Promise.all(updateLocalDbRecordsArray).then((data) => {
+						console.log('In Success Call back after updating the local db records status in synchronizeOfflineRecordsForCurrentDay function', data)
+					}).catch((error) => {
+						console.log('Error in updating the record status in local db in synchronizeOfflineRecordsForCurrentDay function', error)
+					})
+				}
+				// onlinerecordstoinsert = localsyncedrecords.filter(o1 => onlinerecords.some(o2 => (o1.EventTime != o2.EventTime && o2.EventTime)))
+				onlinerecordstoinsert = localsyncedrecords.filter(o1 => onlinerecords.some(o2 => (o1.CUSTOMER06 != o2.CUSTOMER06 && o2.CUSTOMER06)));
+				//====> Insert Case.
+				//if any records which are not present in the local database and present at the backend, we will insert them into the local database.
+				let insertLocalDbRecordsArray = [];
+				for (let record of onlinerecordstoinsert) {
+					insertLocalDbRecordsArray.push(this.insertRecordsInLocalDb(record))
+				}
+				if (insertLocalDbRecordsArray.length) {
+					//Use insertRecordsInLocalDb function to insert the online only records into the local database.
+					Promise.all(insertLocalDbRecordsArray).then((data) => {
+						console.log('In Success Call back after updating the local db records status in synchronizeOfflineRecordsForCurrentDay function', data)
+					}).catch((error) => {
+						console.log('Error in updating the record status in local db in synchronizeOfflineRecordsForCurrentDay function', error)
+					})
+				}
+
+				//=====>Delete Case need to be worked upon.
+
 			}
+
+			this.synchronizeAllOfflineRecords();
+
+		},
+		/**
+		 * @description Function to synchronize all the offline records, once the current day records processing(offline/online check/update/push) is completed.
+		 * 
+		 */
+		synchronizeAllOfflineRecords: async function () {
+
+			//Then find the local db for old offline records, fetch data for that particular days and only push them
+			//Get Offline Records and identifyy the oldest records from the local db.
+			// let allofflineRecords = await this.getOfflineRecords();
+			let oldestRecordFromOffline = await this.getOldestOfflineRecords();
+
+			//
+			const today = new Date();
+			const yesterday = new Date(today);
+			yesterday.setDate(yesterday.getDate() - 1);
+
+			//Get the online records from the identified last day to Current Day minus one day.
+			let onlinerecords = await this.fetchOnlineRecordsUsingAjaxCall(oldestRecordFromOffline.oldestrecord.EventDate, yesterday);
+
+			let localsyncedrecords = await this.fetchRecordsFromLocalDb(oldestRecordFromOffline.oldestrecord.EventDate, yesterday, true);
+
+			let offlinerecords = oldestRecordFromOffline.docs;
+
+
+			//Compare the offline with online records and check whether they need to be posted or not, and if they are already updated update the same in the local db
+			if (oldestRecordFromOffline.docs.length) {
+				let offlinerecordstopush = onlinerecords.filter(o1 => offlinerecords.some(o2 => (o1.CUSTOMER06 !== o2.CUSTOMER06 && o2.CUSTOMER06)))
+				console.log('offlinerecordstopush in synchronizeAllOfflineRecords', offlinerecordstopush)
+				let offlinerecordstoupdate = onlinerecords.filter(o1 => offlinerecords.some(o2 => (o1.CUSTOMER06 == o2.CUSTOMER06 && o2.CUSTOMER06)))
+				console.log('offlinerecordstoupdate in synchronizeAllOfflineRecords', offlinerecordstoupdate)
+			}
+
+			//if only push is concerned and not the updates, no need of updating them locally.ignore this.
+			if (onlinerecords.length) {
+				let localsyncedrecordstoupdate = localsyncedrecords.filter(o1 => onlinerecords.some(o2 => (o1.EventTime == o2.EventTime && o2.EventTime)))
+				console.log('localsyncedrecordstoupdate in synchronizeAllOfflineRecords', localsyncedrecordstoupdate)
+				let onlinerecordstoinsert = localsyncedrecords.filter(o1 => onlinerecords.some(o2 => (o1.EventTime != o2.EventTime && o2.EventTime)))
+				console.log('onlinerecordstoinsert in synchronizeAllOfflineRecords', onlinerecordstoinsert)
+			}
+
+
+			///isProcessing Flag to identify the records which are currently in processing state, 
+			//before the start of the process we will mark it as active, if it comes as an error or success we will update the status to previous state,
+			//this need to be added for every record..
+
+			//if if fails due to network unreachability, when the sync process again starts we need to check whether they are posted or not and update the local database flag.
+
+
+			// Push All the offline records with a promise call.
+
+
+			//Fetch data for the last date of the identified record and for the current date -1 from the backend.
+
+
+
 
 		},
 
 		/**
-		 * @public 
-		 * @description Function to get the records punched in the offline mode from the local database.
+		 * 
+		 * @param {Date} filtercondition - Date Passed to the Function to fetch the records for that particular day from the local database.
+		 * @param {Boolean} syncFlag - Sync Flag to identify the synced and non-synced records.
+		 * @description Function to get the records from the local database based on the sync flag, if sync flag is true we are getting the synced recods,
+		 * if sync flag is false we will fetch the offline non-synced records.
 		 */
-		getOfflineRecords: function () {
+		fetchRecordsFromLocalDb: async function (filtercondition1, filtercondition2, syncFlag) {
+			let query = { module: 'TimeEventSetIndividual', isSynced: syncFlag }
+			if (filtercondition1) {
+				let newDate = new Date(Date.UTC(filtercondition1.getFullYear(), filtercondition1.getMonth(), filtercondition1.getDate()));
+				let filteredDate = '/Date(' + newDate.getTime() + ')/';
+				query = { module: 'TimeEventSetIndividual', isSynced: syncFlag, EventDate: filteredDate }
+			}
+			if (filtercondition1 && filtercondition2) {
+				let newDate1 = new Date(Date.UTC(filtercondition1.getFullYear(), filtercondition1.getMonth(), filtercondition1.getDate()));
+				let newDate2 = new Date(Date.UTC(filtercondition2.getFullYear(), filtercondition2.getMonth(), filtercondition2.getDate()));
+				let filteredDate1 = '/Date(' + newDate1.getTime() + ')/';
+				let filteredDate2 = '/Date(' + newDate2.getTime() + ')/';
+				query = { module: 'TimeEventSetIndividual', isSynced: syncFlag, EventDate: { $gte: filteredDate1, $lte: filteredDate2 } }
+			}
 			return new Promise((resolve, reject) => {
-				db.find({ module: 'TimeEventSetIndividual', isSynced: false }, function (err, docs) {
+				db.find(query, function (err, docs) {
 					if (err) {
 						console.log('Error in finding TimeEventSetIndividual', err);
 						reject(err)
@@ -3097,6 +3247,198 @@ sap.ui.define([
 					}
 				})
 
+			})
+		},
+
+
+		/**
+		 * @public
+		 * @description Function to sync the offline generated records to backend system and update the status of the same in the local database once the sync completes.
+		 */
+		synchronizeOfflineRecordsToBackendTwo: async function (firstDay, lastDay, thirdDay) {
+			//custom code starts
+			console.log('All the records are not same', firstDay, lastDay)
+			let offlinerecords = await this.getOfflineRecords(firstDay)
+			console.log('offlinerecords obtained ==>', offlinerecords)
+			let onlinerecords = await this.fetchOnlineRecordsUsingAjaxCall(firstDay, lastDay)
+			console.log('onlinerecords obtained', onlinerecords)
+			//Identifying the records that need to be pushed which doesn't have the C6 fields matching
+
+			//If, Offline Records exists then compare each offline record with the data on the server by using C6 or C5 fields and add it to the server list or add it to the local db depending on the 
+			//status
+			//Else, If Offline Records doesn't exists, then get all the data from the local db for that day and compare the records with the data from the server
+			//if all the record matches replace the complete set.
+			//
+			let c6unmatchedrecords = offlinerecords.filter(o1 => onlinerecords.some(o2 => (o1.CUSTOMER06 !== o2.CUSTOMER06 && o2.CUSTOMER06)))
+			console.log('Records to push c6unmatchedrecords', c6unmatchedrecords)
+			//Identifying the records that need to be pushed which have the C6 fields matching
+			let c6matchedrecords = offlinerecords.filter(o1 => onlinerecords.some(o2 => (o1.CUSTOMER06 === o2.CUSTOMER06 && o2.CUSTOMER06)))
+			console.log('Records to push c6matchedrecords', c6matchedrecords)
+			//Identifying the records that need to be pushed which doesn't have the C5 fields matching
+
+			// let c5unmatchedrecords = offlinerecords.filter(o1 => onlinerecords.some(o2 => (o1.CUSTOMER05 !== o2.CUSTOMER05 && o2.CUSTOMER05)))
+			// console.log('Records to Push c5unmatchedrecords', c5unmatchedrecords)
+
+
+
+			if (c6matchedrecords.length) {
+				//Update the records status in the local db based on the backend updated information of the record
+				let updateLocalDbRecordsArray = [];
+				for (let i = 0; i < c6matchedrecords.length; i++) {
+					updateLocalDbRecordsArray.push(this.updateRecordStatusInLocalDb(c6matchedrecords[i], c6matchedrecords[i].CUSTOMER06, 'CUSTOMER06'))
+				}
+				Promise.all(updateLocalDbRecordsArray).then((data) => {
+					console.log('In Success Call back after updating the local db records status', data)
+				}).catch((error) => {
+					console.log('Error in updating the record status in local db', error)
+				})
+			}
+			if (c6unmatchedrecords.length) {
+				//Try to push the records to the ecc endpoint and based on the success callback update the status of the record in the local db
+				let postOfflineRecordsArray = [];
+				let geodata = await this.getGeoCoordinates();
+				for (let i = 0; i < c6unmatchedrecords.length; i++) {
+					postOfflineRecordsArray.push(this.postOfflineRecordsToBackend(c6unmatchedrecords[i], geodata))
+				}
+				Promise.all(postOfflineRecordsArray).then((data) => {
+					console.log('In Success Callback', data)
+				}).catch((error) => {
+					console.log('Error in posting the offline records to ecc endpoint', error)
+				})
+			}
+			if (c6matchedrecords.length === 0) {
+				let c5unmatchedrecords = onlinerecords.filter(o1 => offlinerecords.some(o2 => (o1.CUSTOMER05 !== o2.CUSTOMER05 && o2.CUSTOMER05)))
+				console.log('Records to Push c5unmatchedrecords', c5unmatchedrecords)
+
+				//Identifying the records that need to be pushed which have the C5 fields matching
+				let c5matchedrecords = offlinerecords.filter(o1 => onlinerecords.some(o2 => (o1.CUSTOMER05 === o2.CUSTOMER05 && o2.CUSTOMER05)))
+				console.log('Records to push c5matchedrecords', c5matchedrecords)
+				//if there are no c6 matched records, compare with c5 field and if there is a matching record update in the local database, else post the record to ecc.
+				if (c5matchedrecords.length) {
+					//Update the local db data by observing the changes in the online data
+					let updateLocalDbRecordsArray = [];
+					// for (let i = 0; i < c5matchedrecords.length; i++) {
+					// 	updateLocalDbRecordsArray.push(this.updateRecordStatusInLocalDb(c5matchedrecords[i], c5matchedrecords[i].CUSTOMER05, 'CUSTOMER05'))
+					// }
+
+					for (let i of c5matchedrecords) {
+						updateLocalDbRecordsArray.push(this.updateRecordStatusInLocalDb(c5matchedrecords[i], c5matchedrecords[i].CUSTOMER05, 'CUSTOMER05'))
+					}
+					Promise.all(updateLocalDbRecordsArray).then((data) => {
+						console.log('In Success Call back after updating the local db records status', data)
+					}).catch((error) => {
+						console.log('Error in updating the record status in local db', error)
+					})
+				}
+			}
+			this.getEvents(thirdDay);
+			// }
+			//custom code ends
+
+			// let offlineRecords = await this.getOfflineRecords();
+			// var that = this;
+			// if (navigator.onLine) {
+			// 	this.byId("calendar").setBusy(true);
+			// 	if (offlineRecords.length) {
+			// 		let geodata = await this.getGeoCoordinates();
+			// 		let postOfflineRecordsArray = []
+			// 		for (let i = 0; i < offlineRecords.length; i++) {
+			// 			postOfflineRecordsArray.push(this.postOfflineRecordsToBackend(offlineRecords[i], geodata))
+			// 		}
+			// 		Promise.all(postOfflineRecordsArray).then((successResp) => {
+			// 			that.replaceSyncedRecordsInLocalDbUsingAjaxCall(firstDay, lastDay, thirdDay)
+			// 		}).catch((error) => {
+			// 			console.log('Error in posting offline records', error)
+			// 			that.replaceSyncedRecordsInLocalDbUsingAjaxCall(firstDay, lastDay, thirdDay)
+			// 		})
+			// 		// }
+			// 	}
+			// 	else if (offlineRecords.length === 0) {
+			// 		that.replaceSyncedRecordsInLocalDbUsingAjaxCall(firstDay, lastDay, thirdDay)
+			// 	}
+			// }
+			// else if (window.networkStatus === 'Offline' || !navigator.onLine) {
+			// 	console.log('System is in offline mode')
+			// }
+
+		},
+
+		/**
+		 * @public 
+		 * @description Function to get the records punched in the offline mode from the local database. If date parameter is passed it will fetch the result matching to that date, else it will fetch all
+		 * the available offline records from the database.
+		 */
+		getOfflineRecords: function (filtercondition = '') {
+			// console.log('Inside getOffline Records function call')
+			let query = { module: 'TimeEventSetIndividual', isSynced: false }
+			if (filtercondition) {
+				let newDate = new Date(Date.UTC(filtercondition.getFullYear(), filtercondition.getMonth(), filtercondition.getDate()));
+				let filteredDate = '/Date(' + newDate.getTime() + ')/';
+				// console.log('Inside filter condition', filtercondition, filteredDate)
+				query = { module: 'TimeEventSetIndividual', isSynced: false, EventDate: filteredDate }
+				// query = { module: 'TimeEventSetIndividual', EventDate: filteredDate }
+			}
+			return new Promise((resolve, reject) => {
+				db.find(query, function (err, docs) {
+					if (err) {
+						console.log('Error in finding TimeEventSetIndividual', err);
+						reject(err)
+					}
+					else if (docs) {
+						resolve(docs);
+					}
+				})
+
+			})
+		},
+
+		/**
+		 * @description Function to get the oldest offline records available, along with the oldest date of the records.
+		 */
+		getOldestOfflineRecords: function () {
+			let query = { module: 'TimeEventSetIndividual', isSynced: false }
+			return new Promise((resolve, reject) => {
+				db.find(query).sort({ "EventDate": 1 }).exec(function (err, docs) {
+					if (err) {
+						console.log('Error in finding oldest offline records', err);
+						reject(err)
+					}
+					else if (docs) {
+						// resolve(docs);
+						resolve({
+							docs,
+							oldestrecord: docs[0]
+						})
+					}
+				})
+
+			})
+		},
+
+
+		/**
+		 * 
+		 * @param {Date} fromDate - From Date field to pass as a filter to the query
+		 * @param {Date} toDate - To Date field to pass as a filter to the query
+		 * @description - Function to fetch the backend available records using ajax call, it accepts two parameters and returns a result set. 
+		 */
+		fetchOnlineRecordsUsingAjaxCall: function (fromDate, toDate) {
+			console.log('From Date', fromDate, 'TO Date', toDate)
+			let now = new Date(fromDate.getTime() - fromDate.getTimezoneOffset() * 60000).toISOString().replace('Z', '')
+			let then = new Date(toDate.getTime() - toDate.getTimezoneOffset() * 60000).toISOString().replace('Z', '')
+			let oServiceURI = this.getOwnerComponent().getMetadata().getManifestEntry("sap.app").dataSources["timeEventService"].uri;
+			const options = {
+				headers: { 'Authorization': 'Bearer ' + localStorage.token }
+			};
+			return new Promise((resolve, reject) => {
+				axios.get(oServiceURI + "/odata/sap/HCMFAB_MYTIMEEVENTS_SRV/TimeEventSet?$filter=DateFrom eq datetime'" + now + "' and DateTo eq datetime'" + then + "'", options).then(async (filteredData) => {
+					let filteredRecords = filteredData.data.d.results;
+					// console.log(filteredRecords, ' fetchOnlineRecordsUsingAjaxCall func call')
+					resolve(filteredRecords)
+				}).catch((error) => {
+					reject(error)
+					console.log('Error in making ajax call', error)
+				})
 			})
 		},
 
@@ -3186,6 +3528,17 @@ sap.ui.define([
 		postOfflineRecordsToBackend: function (record, geodata) {
 			var that = this;
 			return new Promise((resolve, reject) => {
+
+				//isProcessing flag addition, commenting out this code, will remain the old flow as it is.
+				//.>>>>>>>>>
+				// db.update({ _id: record._id }, { $set: { isProcessing: true } }, function (err, numReplaced) {
+				// 	if (err) {
+				// 		console.log("Error in Finding offline Records", err);
+				// 		reject(err);
+				// 	}
+				// 	else if (numReplaced) {
+
+				//Posting to backend starts
 				let oServiceURI = this.getOwnerComponent().getMetadata().getManifestEntry("sap.app").dataSources["timeEventService"].uri;
 				//Posting to backend record by record.
 				let latitudeNew = geodata.latitude.toString();
@@ -3234,7 +3587,53 @@ sap.ui.define([
 
 				});
 				//Posting to backend ends
+				// }
+				// })
 
+			})
+
+		},
+
+
+		/**
+		 * 
+		 * @param {Object} recordToUpdate - Updated Object received from the backend
+		 * @param {String} queryValue - Value of the Field which we are comparing in localdatabase to update
+		 * @param {String} queryField - Key of the Field with which we are comparing in the localdatabase to query, possible values are:- CUSTOMER05, CUSTOMER06
+		 */
+		updateRecordStatusInLocalDb: function (recordToUpdate, queryValue, queryField) {
+			recordToUpdate.isSynced = true;
+			return new Promise((resolve, reject) => {
+				db.update({ module: 'TimeEventSetIndividual', [queryField]: queryValue }, { $set: recordToUpdate }, { upsert: true }, function (err, updatedRecord) {
+					if (err) {
+						console.log('Error in updating the record status in local db', err)
+						reject(err);
+					} else if (updatedRecord) {
+						console.log('Record Updated', updatedRecord)
+						resolve(updatedRecord)
+					}
+
+				})
+
+			})
+		},
+
+		/**
+		 * 
+		 * @description Function to insert timeevent data into local database.
+		 * @param {Object} recordToInsert - TimeEvent Object to insert into the local database.
+		 */
+		insertRecordsInLocalDb: function (recordToInsert) {
+			return new Promise((resolve, reject) => {
+				db.insert(recordToInsert, function (err, docs) {
+					if (err) {
+						console.log('Error in inserting records into local db inside insertRecordsInLocalDb function', err)
+						reject(err)
+					}
+					else if (docs) {
+						resolve(docs);
+					}
+				})
 			})
 
 		},
