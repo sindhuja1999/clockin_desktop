@@ -231,9 +231,9 @@ sap.ui.define([
 					fnResolve(that.getEvents(new Date()));
 					fnReject();
 				}
-			).then(that.initCalendar(that.empID)).then(that.synchronizeOfflineRecordsToBackend(new Date(), new Date(), new Date())) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
-			// ).then(that.initCalendar(that.empID)).then(that.synchronizeOfflineRecordsToBackendTwo(new Date(), new Date(), new Date())) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
-			// ).then(that.initCalendar(that.empID)).then(that.synchronizeOfflineRecordsForCurrentDay(new Date())) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
+				).then(that.initCalendar(that.empID)).then(that.synchronizeOfflineRecordsToBackend(new Date(), new Date(), new Date())) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
+				// ).then(that.initCalendar(that.empID)).then(that.synchronizeOfflineRecordsToBackendTwo(new Date(), new Date(), new Date())) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
+			// ).then(that.initCalendar(that.empID)).then(that.synchronizeOfflineRecordsForCurrentDay(new Date(), new Date())) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
 
 			var date = new Date();
 			var selectedTab;
@@ -3062,19 +3062,20 @@ sap.ui.define([
 		 * @description Function to sync the offline records for current day by fetching the current day records and comparing them and update them locally, if any 
 		 * records found true offline they need to be pushed to the backend.
 		 */
-		synchronizeOfflineRecordsForCurrentDay: async function (firstDay) {
+		synchronizeOfflineRecordsForCurrentDay: async function (firstDay, lastDay) {
 			let onlinerecords = await this.fetchOnlineRecordsUsingAjaxCall(firstDay, lastDay); //fetching the online records for the current day, both parameters are same
 			let offlinerecords = await this.fetchRecordsFromLocalDb(firstDay, '', false);// fetch the offline non synced records from the local database.
 			let localsyncedrecords = await this.fetchRecordsFromLocalDb(firstDay, '', true);// fetch the synced records from the local database.
 			console.log('onlinerecords obtained', onlinerecords);
 			console.log('offlinerecords obtained ==>', offlinerecords);
 			console.log('localsyncedrecords obtained ==>', localsyncedrecords);
-			let offlinerecordstopush = [], offlinerecordstoupdate = [], localsyncedrecordstoupdate = [], onlinerecordstoinsert = [];
+			let offlinerecordstopush = [], offlinerecordstoupdate = [], localsyncedrecordstoupdate = [], onlinerecordstoinsert = [], recordstobedeletedfromlocaldb = [];
 
+			//>>>>>>> Offline Scenarios are working fine.
 			if (offlinerecords.length) {
 				//Checking offline records with C6 field to compare the offline records that need to be pushed to the server.
 				// offlinerecordstopush = onlinerecords.filter(o1 => offlinerecords.some(o2 => (o1.CUSTOMER06 !== o2.CUSTOMER06 && o2.CUSTOMER06)))
-				offlinerecordstopush = offlinerecords.filter(o1 => onlinerecords.some(o2 => (o2.CUSTOMER06 && o1.CUSTOMER06 != o2.CUSTOMER06)))
+				offlinerecordstopush = offlinerecords.filter(o1 => !onlinerecords.some(o2 => (o2.CUSTOMER06 && o1.CUSTOMER06 == o2.CUSTOMER06)))
 				//If there are any online records present in the local db which are marked as offline, by checking the status we will update the status locally.
 				// offlinerecordstoupdate = onlinerecords.filter(o1 => offlinerecords.some(o2 => (o1.CUSTOMER06 == o2.CUSTOMER06 && o2.CUSTOMER06)))
 				offlinerecordstoupdate = offlinerecords.filter(o1 => onlinerecords.some(o2 => (o2.CUSTOMER06 && o1.CUSTOMER06 == o2.CUSTOMER06)))
@@ -3082,8 +3083,9 @@ sap.ui.define([
 
 
 
+				//////----??? No issues working fine for Offline records posting.
 				// Push All the offline records with a promise call.
-				if (offlinerecordstopush.length) {
+				if (offlinerecordstopush.length && 0) {
 					let postOfflineRecordsArray = [];
 					let geodata = await this.getGeoCoordinates();
 
@@ -3101,7 +3103,7 @@ sap.ui.define([
 
 				//if there are any matches that indicates some of them were not updated locally but present in the server. We need to update the status of such records
 				//locally indicating that they are synced.
-				if (offlinerecordstoupdate.length) {
+				if (offlinerecordstoupdate.length && 0) {
 					let updateLocalDbRecordsArray = [];
 					for (let record of offlinerecordstoupdate) {
 						updateLocalDbRecordsArray.push(this.updateRecordStatusInLocalDb(record, record.CUSTOMER06, 'CUSTOMER06'))
@@ -3117,6 +3119,9 @@ sap.ui.define([
 
 
 			}
+
+
+			//////----??? Has issues with insertRecordsInLocalDb function.
 			if (onlinerecords.length) {
 				// localsyncedrecordstoupdate = localsyncedrecords.filter(o1 => onlinerecords.some(o2 => (o1.EventTime == o2.EventTime && o2.EventTime)))
 				localsyncedrecordstoupdate = localsyncedrecords.filter(o1 => onlinerecords.some(o2 => (o2.CUSTOMER06 && o1.CUSTOMER06 == o2.CUSTOMER06)))
@@ -3134,27 +3139,42 @@ sap.ui.define([
 					})
 				}
 				// onlinerecordstoinsert = localsyncedrecords.filter(o1 => onlinerecords.some(o2 => (o1.EventTime != o2.EventTime && o2.EventTime)))
-				onlinerecordstoinsert = localsyncedrecords.filter(o1 => onlinerecords.some(o2 => (o1.CUSTOMER06 != o2.CUSTOMER06 && o2.CUSTOMER06)));
+				// onlinerecordstoinsert = localsyncedrecords.filter(o1 => onlinerecords.some(o2 => (o1.CUSTOMER06 != o2.CUSTOMER06 && o2.CUSTOMER06)));
+				onlinerecordstoinsert = localsyncedrecords.filter(o1 => !onlinerecords.some(o2 => (o1.CUSTOMER06 == o2.CUSTOMER06 && o2.CUSTOMER06)));
 				//====> Insert Case.
 				//if any records which are not present in the local database and present at the backend, we will insert them into the local database.
 				let insertLocalDbRecordsArray = [];
-				for (let record of onlinerecordstoinsert) {
-					insertLocalDbRecordsArray.push(this.insertRecordsInLocalDb(record))
-				}
-				if (insertLocalDbRecordsArray.length) {
+				// for (let record of onlinerecordstoinsert) {
+				// 	insertLocalDbRecordsArray.push(this.insertRecordsInLocalDb(record))
+				// }
+				if (insertLocalDbRecordsArray.length && 0) {
 					//Use insertRecordsInLocalDb function to insert the online only records into the local database.
 					Promise.all(insertLocalDbRecordsArray).then((data) => {
-						console.log('In Success Call back after updating the local db records status in synchronizeOfflineRecordsForCurrentDay function', data)
+						console.log('In Success Call back after inserting the local db records status in synchronizeOfflineRecordsForCurrentDay function', data)
 					}).catch((error) => {
-						console.log('Error in updating the record status in local db in synchronizeOfflineRecordsForCurrentDay function', error)
+						console.log('Error in inserting the record status in local db in synchronizeOfflineRecordsForCurrentDay function', error)
 					})
 				}
 
 				//=====>Delete Case need to be worked upon.
+				//Logic is yet to be worked upon.
 
+				recordstobedeletedfromlocaldb = localsyncedrecords.filter(o1 => onlinerecords.some(o2 => (o1.CUSTOMER06 != o2.CUSTOMER06 && o2.CUSTOMER06)));
+				let recordsDeleteArray = [];
+				for (let record of recordstobedeletedfromlocaldb) {
+					//Call with this function (removeRecordsFromLocalDb)
+					recordsDeleteArray.push(this.removeRecordsFromLocalDb(record));
+				}
+				if (recordsDeleteArray.length && 0) {
+					Promise.all(recordsDeleteArray).then((data) => {
+						console.log('In Success Call back after removing the local db records status in synchronizeOfflineRecordsForCurrentDay function', data)
+					}).catch((error) => {
+						console.log('Error in removing the record status in local db in synchronizeOfflineRecordsForCurrentDay function', error)
+					})
+				}
 			}
 
-			this.synchronizeAllOfflineRecords();
+			// this.synchronizeAllOfflineRecords();
 
 		},
 		/**
@@ -3187,6 +3207,24 @@ sap.ui.define([
 				console.log('offlinerecordstopush in synchronizeAllOfflineRecords', offlinerecordstopush)
 				let offlinerecordstoupdate = onlinerecords.filter(o1 => offlinerecords.some(o2 => (o1.CUSTOMER06 == o2.CUSTOMER06 && o2.CUSTOMER06)))
 				console.log('offlinerecordstoupdate in synchronizeAllOfflineRecords', offlinerecordstoupdate)
+
+
+				//Offline Records are pushed to the backend.
+				if (offlinerecordstopush.length) {
+					let postOfflineRecordsArray = [];
+					//Eliminate this call by taking the value from the previous function
+					let geodata = await this.getGeoCoordinates();//
+
+					for (let value of offlinerecordstopush) {
+						postOfflineRecordsArray.push(this.postOfflineRecordsToBackend(value, geodata))
+					}
+					Promise.all(postOfflineRecordsArray).then((data) => {
+						console.log('In Success Callback', data)
+					}).catch((error) => {
+						console.log('Error in posting the offline records to ecc endpoint', error)
+					})
+				}
+
 			}
 
 			//if only push is concerned and not the updates, no need of updating them locally.ignore this.
@@ -3627,7 +3665,7 @@ sap.ui.define([
 			return new Promise((resolve, reject) => {
 				db.insert(recordToInsert, function (err, docs) {
 					if (err) {
-						console.log('Error in inserting records into local db inside insertRecordsInLocalDb function', err)
+						console.log('Error in inserting records into local db inside insertRecordsInLocalDb function', err, recordToInsert)
 						reject(err)
 					}
 					else if (docs) {
@@ -3636,6 +3674,25 @@ sap.ui.define([
 				})
 			})
 
+		},
+
+		/**
+		 * 
+		 * @description Function used to remove the record/records from the local database
+		 * @param {Object} record - Record to be deleted from the local database.
+		 */
+		removeRecordsFromLocalDb: async function (record) {
+			return new Promise((resolve, reject) => {
+				db.remove({ _id: record._id }, function (err, removedDoc) {
+					if (err) {
+						console.log('Error in removing the documents from the local database', err)
+						reject(err);
+					}
+					else if (removedDoc) {
+						resolve(removedDoc);
+					}
+				})
+			})
 		},
 
 		/**
