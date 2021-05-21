@@ -2429,7 +2429,9 @@ sap.ui.define([
 							CUSTOMER02: longit.length > 20 ? longit.substring(0.20) : longit,
 							CUSTOMER05: appStatus.length > 20 ? appStatus.substring(0, 20) : appStatus,
 							CUSTOMER06: punchType.length > 20 ? punchType.substring(0, 20) : punchType,
-							CUSTOMER07: oshostname.length > 20 ? oshostname.substring(0, 20) : oshostname
+							CUSTOMER07: oshostname.length > 20 ? oshostname.substring(0, 20) : oshostname,
+							TerminalId : "DCBA",
+							Note: punchType.length > 20 ? punchType.substring(0, 20) : punchType
 						};
 						that.selectedDate = new Date();
 						date.setMonth(date.getMonth() - 1, 1);
@@ -2458,54 +2460,70 @@ sap.ui.define([
 
 					// var newDate = new Date(Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate(), dt.getHours(), dt.getMinutes(), dt.getSeconds(), dt.getMilliseconds()));
 					// var date1 = '/Date(' + newDate.getTime() + ')/';
+
+					//Inserting the timeevents set records as offline initially and update the status when the record is posted to backend.
 					db.insert({ module: 'TimeEventSetIndividual', isSynced: false, isPosted: false, ...obj }, function (err, entities) {
 						if (err) {
 							console.log("Error in inserting TimeEventSetIndividual", err)
 						} else if (entities) {
 							that.busyDialog.close();
 							//Online record creation attempt
-							if (navigator.onLine || window.networkStatus === 'Online') {
-								var oDataModel = new sap.ui.model.odata.v2.ODataModel({
-									serviceUrl: oServiceURI + '/odata/SAP/HCMFAB_MYTIMEEVENTS_SRV',
-									useBatch: false,
-									headers: {
-										Authorization: "Bearer " + localStorage.getItem('token'),
-										Accept: "*/*"
-									}
-								});
-								let payload = entities;
-								let id = payload._id;
-								delete payload.module;
-								delete payload.isSynced;
-								delete payload._id;
-								delete payload.isPosted;
-								//console.log("Entities are", entities)
-								//console.log("Payload is ", payload)
-								oDataModel.create("/TimeEventSet", payload, {
-									success: function (oData, oResponse) {
-										// await new Promise((resolve, reject) => {
-										db.update({ _id: id, isSynced: false }, { $set: { isSynced: true, isPosted: false } },
-											function (err, numReplaced) {
-												if (err) {
-													console.log("Error in Finding offline Records", err);
-													// reject();
-												}
-												else {
-													// that.hideBusy();
-													// var toastMsg = that.oBundle.getText("timeEventCreated");
-													// sap.m.MessageToast.show(toastMsg, {
-													// 	duration: 3000 
-													// });
-												}
-											});
-										// })
-									},
-									error: function (err) {
-										console.log(err);
-									}
+							// if (navigator.onLine || 1) {
+							var oDataModel = new sap.ui.model.odata.v2.ODataModel({
+								serviceUrl: oServiceURI + '/odata/SAP/HCMFAB_MYTIMEEVENTS_SRV',
+								useBatch: false,
+								headers: {
+									Authorization: "Bearer " + localStorage.getItem('token'),
+									Accept: "*/*"
+								}
+							});
+							let payload = entities;
+							let id = payload._id;
+							delete payload.module;
+							delete payload.isSynced;
+							delete payload._id;
+							delete payload.isPosted;
+							//console.log("Entities are", entities)
+							//console.log("Payload is ", payload)
 
-								});
-							}
+							//Adding isProcessing Flag to indicate that the record is being in the process of syncing to backend.
+							db.update({ _id: id }, { $set: { isProcessing: true } }, function (err, numReplaced) {
+								if (err) {
+									console.log('Error in updating the isProcessing Flag for TimeEventSet', err)
+								}
+								else if (numReplaced) {
+									console.log('Replacing of records with is isProcessing Flag is success===> true', numReplaced)
+									oDataModel.create("/TimeEventSet", payload, {
+										success: function (oData, oResponse) {
+											// await new Promise((resolve, reject) => {
+											//Updating the isProcessing Flag to indicate that the record is processed.
+											db.update({ _id: id, isSynced: false }, { $set: { isSynced: true, isPosted: false, isProcessing: false } },
+												function (err, numReplaced) {
+													console.log('Replacing of records with is isProcessing Flag is success inside success callback===> false', numReplaced)
+													if (err) {
+														console.log("Error in Finding offline Records", err);
+														// reject();
+													}
+												});
+											// })
+										},
+										error: function (err) {
+											console.log(err);
+											//Updating the isProcessing Flag to indicate that the record is processed.
+											db.update({ _id: id, isSynced: false }, { $set: { isProcessing: false } },
+												function (err, numReplaced) {
+													if (err) {
+														console.log("Error in Finding offline Records", err);
+														// reject();
+													}
+												});
+										}
+
+									});
+								}
+							})
+
+							// }
 							//Online record creation attempt end
 							that.hideBusy();
 							var toastMsg = that.oBundle.getText("timeEventCreated");
@@ -3063,6 +3081,7 @@ sap.ui.define([
 		 * records found true offline they need to be pushed to the backend.
 		 */
 		synchronizeOfflineRecordsForCurrentDay: async function (firstDay, lastDay) {
+			isProcessStarted = true;
 			let onlinerecords = await this.fetchOnlineRecordsUsingAjaxCall(firstDay, lastDay); //fetching the online records for the current day, both parameters are same
 			let offlinerecords = await this.fetchRecordsFromLocalDb(firstDay, '', false);// fetch the offline non synced records from the local database.
 			let localsyncedrecords = await this.fetchRecordsFromLocalDb(firstDay, '', true);// fetch the synced records from the local database.
@@ -3072,7 +3091,7 @@ sap.ui.define([
 			let offlinerecordstopush = [], offlinerecordstoupdate = [], localsyncedrecordstoupdate = [], onlinerecordstoinsert = [], recordstobedeletedfromlocaldb = [];
 
 			//>>>>>>> Offline Scenarios are working fine.
-			if (offlinerecords.length) {
+			if (offlinerecords.length && 0) {
 				//Checking offline records with C6 field to compare the offline records that need to be pushed to the server.
 				// offlinerecordstopush = onlinerecords.filter(o1 => offlinerecords.some(o2 => (o1.CUSTOMER06 !== o2.CUSTOMER06 && o2.CUSTOMER06)))
 				offlinerecordstopush = offlinerecords.filter(o1 => !onlinerecords.some(o2 => (o2.CUSTOMER06 && o1.CUSTOMER06 == o2.CUSTOMER06)))
@@ -3122,7 +3141,8 @@ sap.ui.define([
 
 
 			//////----??? Has issues with insertRecordsInLocalDb function.
-			if (onlinerecords.length) {
+			//Stopeed online checking functionality as it is not working fine as expected.
+			if (onlinerecords.length && 0) {
 				// localsyncedrecordstoupdate = localsyncedrecords.filter(o1 => onlinerecords.some(o2 => (o1.EventTime == o2.EventTime && o2.EventTime)))
 				localsyncedrecordstoupdate = localsyncedrecords.filter(o1 => onlinerecords.some(o2 => (o2.CUSTOMER06 && o1.CUSTOMER06 == o2.CUSTOMER06)))
 				//==>Update Case 
@@ -3173,7 +3193,7 @@ sap.ui.define([
 					})
 				}
 			}
-
+			
 			// this.synchronizeAllOfflineRecords();
 
 		},
@@ -3181,7 +3201,7 @@ sap.ui.define([
 		 * @description Function to synchronize all the offline records, once the current day records processing(offline/online check/update/push) is completed.
 		 * 
 		 */
-		synchronizeAllOfflineRecords: async function () {
+		synchronizeAllOfflineRecords: async function (fromDate, toDate) {
 
 			//Then find the local db for old offline records, fetch data for that particular days and only push them
 			//Get Offline Records and identifyy the oldest records from the local db.
@@ -3567,15 +3587,6 @@ sap.ui.define([
 			var that = this;
 			return new Promise((resolve, reject) => {
 
-				//isProcessing flag addition, commenting out this code, will remain the old flow as it is.
-				//.>>>>>>>>>
-				// db.update({ _id: record._id }, { $set: { isProcessing: true } }, function (err, numReplaced) {
-				// 	if (err) {
-				// 		console.log("Error in Finding offline Records", err);
-				// 		reject(err);
-				// 	}
-				// 	else if (numReplaced) {
-
 				//Posting to backend starts
 				let oServiceURI = this.getOwnerComponent().getMetadata().getManifestEntry("sap.app").dataSources["timeEventService"].uri;
 				//Posting to backend record by record.
@@ -3627,6 +3638,83 @@ sap.ui.define([
 				//Posting to backend ends
 				// }
 				// })
+
+			})
+
+		},
+
+		/**
+		 * 
+		 * @param {Object} record - Record that need to be posted to the backend
+		 * @param {Object} geodata - Updated GeoCoordinates Data for checking if there is any difference of coordinates while posting.
+		 * @description Function to post the offline records to backend 
+		 * 
+		 */
+		postOfflineRecordsToBackendNew: function (record, geodata) {
+			var that = this;
+			return new Promise((resolve, reject) => {
+
+				//isProcessing flag addition, commenting out this code, will remain the old flow as it is.
+				//.>>>>>>>>>
+				db.update({ _id: record._id }, { $set: { isProcessing: true } }, function (err, numReplaced) {
+					if (err) {
+						console.log("Error in Finding offline Records", err);
+						reject(err);
+					}
+					else if (numReplaced) {
+
+						//Posting to backend starts
+						let oServiceURI = this.getOwnerComponent().getMetadata().getManifestEntry("sap.app").dataSources["timeEventService"].uri;
+						//Posting to backend record by record.
+						let latitudeNew = geodata.latitude.toString();
+						let longitudeNew = geodata.longitude.toString();
+
+						var oDataModel = new sap.ui.model.odata.v2.ODataModel({
+							serviceUrl: oServiceURI + '/odata/SAP/HCMFAB_MYTIMEEVENTS_SRV',
+							useBatch: false,
+							headers: {
+								Authorization: "Bearer " + localStorage.getItem('token'),
+								Accept: "*/*"
+							}
+						});
+						let payload = record;
+						let id = payload._id;
+						delete payload.module;
+						delete payload.isSynced;
+						delete payload._id;
+						delete payload.isPosted;
+						if (payload.latitude != latitudeNew) {
+							payload.CUSTOMER03 = latitudeNew.length > 20 ? latitudeNew.substring(0.20) : latitudeNew;
+							payload.CUSTOMER04 = longitudeNew.length > 20 ? longitudeNew.substring(0.20) : longitudeNew;
+						}
+						oDataModel.create("/TimeEventSet", payload, {
+							success: function (oData, oResponse) {
+								// db.update({ _id: id, isSynced: false }, { $set: { isSynced: true, isPosted: false } },
+								db.update({ _id: id, isSynced: false }, { $set: { isSynced: true, isPosted: false, isProcessing: true } },
+									function (err, numReplaced) {
+										if (err) {
+											console.log("Error in Finding offline Records", err);
+											reject(err);
+										}
+										else {
+											that.hideBusy();
+											resolve({ oData, oResponse });
+										}
+									});
+							},
+							error: function (err) {
+								that.byId("calendar").setBusy(false);
+								var oViewModel = new JSONModel({
+									networkStatus: "Offline"
+								});
+								that.getView().setModel(oViewModel, "networkStatusModel");
+								console.log(err);
+							}
+
+						});
+						// Posting to backend ends
+					}
+				})
 
 			})
 
