@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, remote } = require('electron');
+const { app, BrowserWindow, Menu, remote, dialog } = require('electron');
 
 
 
@@ -11,7 +11,7 @@ function createAppWindow() {
       nodeIntegration: false,
       // nodeIntegration: true
     },
-    
+
   });
   win.maximize()
   // win.openDevTools();
@@ -109,6 +109,20 @@ function createAppWindow() {
   win.on('closed', () => {
     win = null;
   });
+  win.on('close', function (e) {
+    // The dialog box below will open, instead of your app closing.
+    e.preventDefault();
+    console.log('Close event Clicked')
+    dialog.showMessageBox({
+      message: "Close button has been pressed!",
+      buttons: ["OK"]
+    });
+  });
+  // win.onbeforeunload = (e) => {
+  //   var answer = confirm('Do you really want to close the application?');
+  //   e.returnValue = answer;  // this will *prevent* the closing no matter what value is passed
+  //   if (answer) { win.destroy(); }  // this will close the app
+  // };
 }
 
 module.exports = createAppWindow;
