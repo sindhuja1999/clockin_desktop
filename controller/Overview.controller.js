@@ -239,7 +239,8 @@ sap.ui.define([
 				}
 				// ).then(that.initCalendar(that.empID)).then(that.synchronizeOfflineRecordsToBackend(new Date(), new Date(), new Date())) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
 				// ).then(that.initCalendar(that.empID)).then(that.synchronizeOfflineRecordsToBackendTwo(new Date(), new Date(), new Date())) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
-			).then(that.initCalendar(that.empID)).then(that.synchronizeOfflineRecordsForCurrentDay(new Date(), new Date())) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
+				// ).then(that.initCalendar(that.empID)).then(that.synchronizeOfflineRecordsForCurrentDay(new Date(), new Date())) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
+			).then(that.initCalendar(that.empID)).then(that.syncOfflineRecordsToBackendForCurrentDay(new Date(), new Date(), new Date())) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
 
 			var date = new Date();
 			var selectedTab;
@@ -2444,6 +2445,7 @@ sap.ui.define([
 						let oshostname = localStorage.getItem('osHostName');
 						var lat = latitude.toString();
 						var longit = longitude.toString();
+						let randomString = that.getRandomString(4)
 						var obj = {
 							EmployeeID: employeeId,
 							EventDate: eventDate,
@@ -2456,7 +2458,8 @@ sap.ui.define([
 							CUSTOMER05: appStatus.length > 20 ? appStatus.substring(0, 20) : appStatus,
 							CUSTOMER06: punchType.length > 20 ? punchType.substring(0, 20) : punchType,
 							CUSTOMER07: oshostname.length > 20 ? oshostname.substring(0, 20) : oshostname,
-							AddTerminalID: that.getRandomString(4),
+							AddTerminalID: randomString,
+							TerminalId: randomString,
 							Note: punchType.length > 20 ? punchType.substring(0, 20) : punchType
 						};
 						that.selectedDate = new Date();
@@ -3105,6 +3108,90 @@ sap.ui.define([
 
 		/**
 		 * 
+		 * @param {Date} firstDay - From Date Parameter
+		 * @param {Date} lastDay - To Date Parameter
+		 * @param {Date} thirdDay - Current Day Value to get the current day events
+		 * @description Function used to sync offline records for the current day.
+		 */
+		syncOfflineRecordsToBackendForCurrentDay: async function (firstDay, lastDay, thirdDay) {
+			let offlineRecordsInLocalDb = await this.getOfflineRecords();// Need to check whether it is for current day or old days
+
+			var that = this;
+			if (navigator.onLine) {
+				this.byId("calendar").setBusy(true);
+				if (offlineRecordsInLocalDb.length) {
+					let geodata = await this.getGeoCoordinates();
+					// 	>>>> Set Sync Flag as in Process and see if the Window Close can disable
+					isProcessStarted = true;
+					let offlinerecordstoupdate = [], offlinerecordstopush = [];
+					// >>>> Get the Earliest offline Record and Send a Red query to the Server
+					let offlinerecords = await this.fetchRecordsFromLocalDb(firstDay, '', false);// fetch the offline non synced records from the local database.
+					let onlinerecords = await this.fetchOnlineRecordsUsingAjaxCall(firstDay, firstDay); //fetching the online records for the current day, both parameters are same
+
+					// >>>> If Data is before 5/11 then
+					// 	>>>> Compare the Data for Customer06 Field and if Data already in server, Mark the record as complete in Local DB
+					// >>>> If previous
+					// 	>>>> Compare with Punch Type and If exists, replace the record in Local
+					// >>>> 
+					offlinerecordstoupdate = offlinerecords.filter(o1 => onlinerecords.some(o2 => (o1.isProcessing && o1.TerminalId == o2.TerminalId)))
+
+					let updateLocalDbRecordsArray = [];
+					if (offlinerecordstoupdate.length) {
+						for (let record of offlinerecordstoupdate) {
+							updateLocalDbRecordsArray.push(this.updateRecordStatusInLocalDb(record, record.TerminalId, 'TerminalId'))
+						}
+						//Can be separated out
+						// if (updateLocalDbRecordsArray.length) {
+						// 	Promise.all(updateLocalDbRecordsArray).then((data) => {
+						// 		console.log('In Success Call back after updating the local db records status in synchronizeOfflineRecordsForCurrentDay function', data)
+						// 	}).catch((error) => {
+						// 		console.log('Error in updating the record status in local db in synchronizeOfflineRecordsForCurrentDay function', error)
+						// 	})
+						// }
+					}
+
+					offlinerecordstopush = offlinerecords.filter(o1 => !onlinerecords.some(o2 => (o2.TerminalId && o1.TerminalId == o2.TerminalId)))
+
+					let postOfflineRecordsArray = [];
+					if (offlinerecordstopush) {
+						for (let record of offlinerecordstopush) {
+							postOfflineRecordsArray.push(this.postOfflineRecordsToBackend(record, geodata))
+						}
+						//Can be separated out
+						// Promise.all(postOfflineRecordsArray).then((successResp) => {
+						// 	that.replaceSyncedRecordsInLocalDbUsingAjaxCall(firstDay, lastDay, thirdDay)
+						// }).catch((error) => {
+						// 	console.log('Error in posting offline records', error)
+						// 	that.replaceSyncedRecordsInLocalDbUsingAjaxCall(firstDay, lastDay, thirdDay)
+						// })
+					}
+
+					try {
+						let updatedResponse = await Promise.all(updateLocalDbRecordsArray)
+						let insertedResponse = await Promise.all(postOfflineRecordsArray)
+						console.log('Successful processing of updatedResponse', updatedResponse)
+						console.log('Successful processing of insertedResponse', insertedResponse)
+						that.replaceSyncedRecordsInLocalDbUsingAjaxCall(firstDay, lastDay, thirdDay)
+					} catch (error) {
+						console.log("Error in resolving the promises inside syncOfflineRecordsToBackendForCurrentDay function", error)
+					}
+
+
+					// }
+				}
+				else if (offlineRecordsInLocalDb.length === 0) {
+					console.log('no Offline records');
+					that.replaceSyncedRecordsInLocalDbUsingAjaxCall(firstDay, lastDay, thirdDay)
+				}
+			}
+			else if (!navigator.onLine) {
+				console.log('System is in offline mode')
+			}
+
+		},
+
+		/**
+		 * 
 		 * @param {Date} firstDay 
 		 * @param {Date} lastDay 
 		 * @param {Date} thirdDay 
@@ -3126,11 +3213,14 @@ sap.ui.define([
 			//Checking offline records with C6 field to compare the offline records that need to be pushed to the server.
 			// offlinerecordstopush = onlinerecords.filter(o1 => offlinerecords.some(o2 => (o1.CUSTOMER06 !== o2.CUSTOMER06 && o2.CUSTOMER06)))
 			// offlinerecordstopush = offlinerecords.filter(o1 => !onlinerecords.some(o2 => (o2.CUSTOMER06 && o1.CUSTOMER06 == o2.CUSTOMER06)))
-			offlinerecordstopush = offlinerecords.filter(o1 => !onlinerecords.some(o2 => (o2.TerminalID && o1.AddTerminalID == o2.TerminalID)))
+			offlinerecordstopush = offlinerecords.filter(o1 => !onlinerecords.some(o2 => (o2.TerminalId && o1.AddTerminalID == o2.TerminalId)))
 			//If there are any online records present in the local db which are marked as offline, by checking the status we will update the status locally.
 			// offlinerecordstoupdate = onlinerecords.filter(o1 => offlinerecords.some(o2 => (o1.CUSTOMER06 == o2.CUSTOMER06 && o2.CUSTOMER06)))
 			// offlinerecordstoupdate = offlinerecords.filter(o1 => onlinerecords.some(o2 => (o2.CUSTOMER06 && o1.CUSTOMER06 == o2.CUSTOMER06)))
-			offlinerecordstoupdate = offlinerecords.filter(o1 => onlinerecords.some(o2 => (o2.TerminalID && o1.AddTerminalID == o2.TerminalID)))
+
+			//Comparing with Terminal Id 
+			// offlinerecordstoupdate = offlinerecords.filter(o1 => onlinerecords.some(o2 => (o2.TerminalId && o1.AddTerminalID == o2.TerminalId)))
+			offlinerecordstoupdate = offlinerecords.filter(o1 => onlinerecords.some(o2 => (o2.isProcessing && o1.AddTerminalID == o2.TerminalId)))
 			//match with the online records and if there are any matching update the status.
 
 
@@ -3178,12 +3268,13 @@ sap.ui.define([
 			// if (onlinerecords.length) {
 			// localsyncedrecordstoupdate = localsyncedrecords.filter(o1 => onlinerecords.some(o2 => (o1.EventTime == o2.EventTime && o2.EventTime)))
 			// localsyncedrecordstoupdate = localsyncedrecords.filter(o1 => onlinerecords.some(o2 => (o2.CUSTOMER06 && o1.CUSTOMER06 == o2.CUSTOMER06)))
-			localsyncedrecordstoupdate = localsyncedrecords.filter(o1 => onlinerecords.some(o2 => (o2.TerminalID && o1.TerminalID == o2.TerminalID)))
+			// localsyncedrecordstoupdate = localsyncedrecords.filter(o1 => onlinerecords.some(o2 => (o2.TerminalId && o1.TerminalId == o2.TerminalId)))
+			localsyncedrecordstoupdate = localsyncedrecords.filter(o1 => onlinerecords.some(o2 => (o2.Orign == 'M' && o1.TerminalId == o2.TerminalId)))
 			//==>Update Case 
 			//if any local synced records are updated at the backend, by making a comparision check and update the same in the local database.
 			let updateLocalDbRecordsArray = [];
 			for (let record of localsyncedrecordstoupdate) {
-				updateLocalDbRecordsArray.push(this.updateRecordStatusInLocalDb(record, record.TerminalID, 'TerminalID'))
+				updateLocalDbRecordsArray.push(this.updateRecordStatusInLocalDb(record, record.TerminalId, 'TerminalId'))
 			}
 			if (updateLocalDbRecordsArray.length) {
 				Promise.all(updateLocalDbRecordsArray).then((data) => {
@@ -3195,13 +3286,13 @@ sap.ui.define([
 			// onlinerecordstoinsert = localsyncedrecords.filter(o1 => onlinerecords.some(o2 => (o1.EventTime != o2.EventTime && o2.EventTime)))
 			// onlinerecordstoinsert = localsyncedrecords.filter(o1 => onlinerecords.some(o2 => (o1.CUSTOMER06 != o2.CUSTOMER06 && o2.CUSTOMER06)));
 			// onlinerecordstoinsert = localsyncedrecords.filter(o1 => !onlinerecords.some(o2 => (o1.CUSTOMER06 == o2.CUSTOMER06 && o2.CUSTOMER06)));
-			onlinerecordstoinsert = localsyncedrecords.filter(o1 => !onlinerecords.some(o2 => (o1.TerminalID == o2.TerminalID && o2.TerminalID)));
+			onlinerecordstoinsert = localsyncedrecords.filter(o1 => !onlinerecords.some(o2 => (o1.TerminalId == o2.TerminalId && o2.TerminalId)));
 			//====> Insert Case.
 			//if any records which are not present in the local database and present at the backend, we will insert them into the local database.
-			let insertLocalDbRecordsArray = [];
 			// for (let record of onlinerecordstoinsert) {
 			// 	insertLocalDbRecordsArray.push(this.insertRecordsInLocalDb(record))
 			// }
+			let insertLocalDbRecordsArray = [];
 			if (insertLocalDbRecordsArray.length && 0) {
 				//Use insertRecordsInLocalDb function to insert the online only records into the local database.
 				Promise.all(insertLocalDbRecordsArray).then((data) => {
@@ -3215,7 +3306,7 @@ sap.ui.define([
 			//Logic is yet to be worked upon.
 
 			// recordstobedeletedfromlocaldb = localsyncedrecords.filter(o1 => onlinerecords.some(o2 => (o1.CUSTOMER06 != o2.CUSTOMER06 && o2.CUSTOMER06)));
-			recordstobedeletedfromlocaldb = localsyncedrecords.filter(o1 => onlinerecords.some(o2 => (o1.TerminalID != o2.TerminalID && o2.TerminalID)));
+			recordstobedeletedfromlocaldb = localsyncedrecords.filter(o1 => onlinerecords.some(o2 => (o1.TerminalId != o2.TerminalId && o2.TerminalId)));
 			let recordsDeleteArray = [];
 			for (let record of recordstobedeletedfromlocaldb) {
 				//Call with this function (removeRecordsFromLocalDb)
@@ -3229,6 +3320,7 @@ sap.ui.define([
 				})
 			}
 			// }
+			isProcessStarted = false;
 
 			// this.synchronizeAllOfflineRecords();
 
@@ -3248,17 +3340,16 @@ sap.ui.define([
 			}
 
 			let oldestRecordFromOffline = await this.getOldestOfflineRecords();
-
 			const today = new Date();
 			const yesterday = new Date(today);
 			yesterday.setDate(yesterday.getDate() - 1);
+			let offlinerecords = oldestRecordFromOffline.docs;
 
 			//Get the online records from the identified last day to Current Day minus one day.
 			let onlinerecords = await this.fetchOnlineRecordsUsingAjaxCall(oldestRecordFromOffline.oldestrecord.EventDate, yesterday);
 
 			let localsyncedrecords = await this.fetchRecordsFromLocalDb(oldestRecordFromOffline.oldestrecord.EventDate, yesterday, true);
 
-			let offlinerecords = oldestRecordFromOffline.docs;
 
 
 			//Compare the offline with online records and check whether they need to be posted or not, and if they are already updated update the same in the local db
@@ -3627,6 +3718,7 @@ sap.ui.define([
 		 * @param {Object} geodata Geo-Coordinates passed to the offline function to compare if there are any differences in the lat, long coordinates.
 		 */
 		postOfflineRecordsToBackend: function (record, geodata) {
+			//This fucntion resembles for the most part with the createTimeEventMob, check for the possibilities and try to use one single function.
 			var that = this;
 			return new Promise((resolve, reject) => {
 
@@ -3650,13 +3742,15 @@ sap.ui.define([
 				delete payload.isSynced;
 				delete payload._id;
 				delete payload.isPosted;
+				delete payload.isProcessing;
 				if (payload.latitude != latitudeNew) {
 					payload.CUSTOMER03 = latitudeNew.length > 20 ? latitudeNew.substring(0.20) : latitudeNew;
 					payload.CUSTOMER04 = longitudeNew.length > 20 ? longitudeNew.substring(0.20) : longitudeNew;
 				}
+				//Before this Odata call, try to update the flag of isProcessing: true before posting to the backend. Also update once you got a success or error response.
 				oDataModel.create("/TimeEventSet", payload, {
 					success: function (oData, oResponse) {
-						db.update({ _id: id, isSynced: false }, { $set: { isSynced: true, isPosted: false } },
+						db.update({ _id: id, isSynced: false }, { $set: { isSynced: true, isPosted: false, isProcessing: false } },
 							function (err, numReplaced) {
 								if (err) {
 									console.log("Error in Finding offline Records", err);
@@ -3670,6 +3764,17 @@ sap.ui.define([
 					},
 					error: function (err) {
 						that.byId("calendar").setBusy(false);
+						db.update({ _id: id, isSynced: false }, { $set: { isSynced: false, isPosted: false, isProcessing: false } },
+							function (err, numReplaced) {
+								if (err) {
+									console.log("Error in Finding offline Records", err);
+									reject(err);
+								}
+								else {
+									that.hideBusy();
+									resolve({ oData, oResponse });
+								}
+							});
 						var oViewModel = new JSONModel({
 							networkStatus: "Offline"
 						});

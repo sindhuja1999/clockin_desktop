@@ -109,15 +109,15 @@ function createAppWindow() {
   win.on('closed', () => {
     win = null;
   });
-  win.on('close', function (e) {
-    // The dialog box below will open, instead of your app closing.
-    e.preventDefault();
-    console.log('Close event Clicked')
-    dialog.showMessageBox({
-      message: "Close button has been pressed!",
-      buttons: ["OK"]
-    });
-  });
+  // win.on('close', function (e) {
+  //   // The dialog box below will open, instead of your app closing.
+  //   e.preventDefault();
+  //   console.log('Close event Clicked')
+  //   dialog.showMessageBox({
+  //     message: "Close button has been pressed!",
+  //     buttons: ["OK"]
+  //   });
+  // });
   // win.onbeforeunload = (e) => {
   //   var answer = confirm('Do you really want to close the application?');
   //   e.returnValue = answer;  // this will *prevent* the closing no matter what value is passed
