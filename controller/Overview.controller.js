@@ -3416,18 +3416,21 @@ sap.ui.define([
 		 * @param {*} offlineRecords 
 		 * @returns 
 		 */
-		replaceRecordsForParticularDay: async function (dateSelected, offlineRecords) {
+		replaceRecordsForParticularDay: async function (dateSelected, offlineRecords, geodata) {
+			console.log('Called inside replaceRecordsForParticularDay function', dateSelected, offlineRecords, geodata)
 			return new Promise(async (resolve, reject) => {
 				if (offlineRecords.length) {
 					// let geodata = await this.getGeoCoordinates();
 					let offlineRecordsForParticularDay = offlineRecords.filter(o1 => o1.EventDate == dateSelected)
+					let convertedDate = new Date(parseInt(dateSelected.substring(6, dateSelected.length -2 )))
+
 					if (offlineRecordsForParticularDay.length) {
 						isProcessStarted = true;
 						let offlinerecordstoupdate = [], offlinerecordstopush = [];
 						// >>>> Get the Earliest offline Record and Send a Red query to the Server
-						let onlinerecords = await this.fetchOnlineRecordsUsingAjaxCall(dateSelected, dateSelected); //fetching the online records for the current day, both parameters are same
+						let onlinerecords = await this.fetchOnlineRecordsUsingAjaxCall(convertedDate, convertedDate); //fetching the online records for the current day, both parameters are same
 
-						offlinerecordstoupdate = onlinerecords.filter(o1 => offlinerecords.some(o2 => (o1.TerminalId == o2.TerminalId)))
+						offlinerecordstoupdate = onlinerecords.filter(o1 => offlineRecords.some(o2 => (o1.TerminalId == o2.TerminalId)))
 
 
 						let updateLocalDbRecordsArray = [];
@@ -3438,7 +3441,7 @@ sap.ui.define([
 
 						}
 
-						offlinerecordstopush = offlinerecords.filter(o1 => !onlinerecords.some(o2 => (o2.TerminalId && o1.TerminalId == o2.TerminalId)))
+						offlinerecordstopush = offlineRecords.filter(o1 => !onlinerecords.some(o2 => (o2.TerminalId && o1.TerminalId == o2.TerminalId)))
 
 						let postOfflineRecordsArray = [];
 						if (offlinerecordstopush) {
@@ -3480,13 +3483,15 @@ sap.ui.define([
 			let offlineNonSyncedRecords = [], uniqueDates = [];
 			let handleOldRecordsDayWiseArray = []
 			if (fromDate && toDate) {
+				console.log('Called inside fromDate & toDate')
 				//Get the oldest available offline records in the localdatabase that are not synced to the backend.
 				offlineNonSyncedRecords = await that.fetchRecordsFromLocalDb(fromDate, toDate, false);
+				let geodata = await this.getGeoCoordinates();
 
 				if (offlineNonSyncedRecords.length) {
-					uniqueDates = [...new Set(data.map(item => item.EventDate))];
+					uniqueDates = [...new Set(offlineNonSyncedRecords.map(item => item.EventDate))];
 					uniqueDates.map((element) => {
-						handleOldRecordsDayWiseArray.push(that.replaceRecordsForParticularDay(element, offlineNonSyncedRecords))
+						handleOldRecordsDayWiseArray.push(that.replaceRecordsForParticularDay(element, offlineNonSyncedRecords, geodata))
 					})
 				}
 
@@ -3495,11 +3500,13 @@ sap.ui.define([
 
 				// onlinerecords = await this.fetchOnlineRecordsUsingAjaxCall(fromDate, toDate);
 			} else {
+				console.log('Called inside else block');
 				offlineNonSyncedRecords = await that.getOldestOfflineRecords();
-				if (offlineNonSyncedRecords.length) {
-					uniqueDates = [...new Set(data.map(item => item.EventDate))];
+				let geodata = await this.getGeoCoordinates();
+				if (offlineNonSyncedRecords.docs.length) {
+					uniqueDates = [...new Set(offlineNonSyncedRecords.docs.map(item => item.EventDate))];
 					uniqueDates.map((element) => {
-						handleOldRecordsDayWiseArray.push(that.replaceRecordsForParticularDay(element, offlineNonSyncedRecords))
+						handleOldRecordsDayWiseArray.push(that.replaceRecordsForParticularDay(element, offlineNonSyncedRecords.docs, geodata))
 					})
 				}
 				// oldestRecordFromOffline = await this.getOldestOfflineRecords();
