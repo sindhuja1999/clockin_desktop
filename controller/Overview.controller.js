@@ -144,6 +144,14 @@ sap.ui.define([
 			// 	that.getView().setModel(oViewModel, "syncModel");
 			// }, 1000)
 
+			// let myval = false
+			// setInterval(() => {
+			// 	myval = !myval
+			// 	this.controlAppClose(myval).then((result)=> {
+			// 		console.log('result for every 30 seconds', result)
+			// 	})
+			// }, 30000)
+
 
 
 			/**
@@ -171,11 +179,13 @@ sap.ui.define([
 					if (that.selectedTab == "quickEntry" && !isProcessStarted) {
 						// if (that.selectedTab == "quickEntry") {
 						// that.synchronizeOfflineRecordsToBackend(now1, then1, date)
-						that.synchronizeOfflineRecordsToBackend(new Date(), new Date(), new Date())
+						// that.synchronizeOfflineRecordsToBackend(new Date(), new Date(), new Date())
+						that.syncOfflineRecordsToBackendForCurrentDay(new Date(), new Date(), new Date(), false)
 					}
 					else if (that.selectedTab == "eventList" && !isProcessStarted) {
 						// else if (that.selectedTab == "eventList") {
-						that.synchronizeOfflineRecordsToBackend(now1, then1, that.selectedDate)
+						// that.synchronizeOfflineRecordsToBackend(now1, then1, that.selectedDate)
+						that.syncOfflineRecordsToBackendForCurrentDay(now1, then1, that.selectedDate, false);
 					}
 
 				}, syncclocktimer * 1000)
@@ -240,7 +250,7 @@ sap.ui.define([
 				// ).then(that.initCalendar(that.empID)).then(that.synchronizeOfflineRecordsToBackend(new Date(), new Date(), new Date())) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
 				// ).then(that.initCalendar(that.empID)).then(that.synchronizeOfflineRecordsToBackendTwo(new Date(), new Date(), new Date())) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
 				// ).then(that.initCalendar(that.empID)).then(that.synchronizeOfflineRecordsForCurrentDay(new Date(), new Date())) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
-			).then(that.initCalendar(that.empID)).then(that.syncOfflineRecordsToBackendForCurrentDay(new Date(), new Date(), new Date())) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
+			).then(that.initCalendar(that.empID)).then(that.syncOfflineRecordsToBackendForCurrentDay(new Date(), new Date(), new Date(), true)) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
 
 			var date = new Date();
 			var selectedTab;
@@ -391,6 +401,16 @@ sap.ui.define([
 				this.getEvents(this.selectedDate);
 				if (!isProcessStarted) {
 					this.synchronizeOfflineRecordsToBackend(this.dateFrom, this.dateTo, date1) //Mallesh on 18-12-2020 for incresing performance.
+				}
+
+				//New code for doing it for current day
+				let selectedDateFromCalendar = new Date(oEvent.getSource().getSelectedDates()[0].getStartDate());
+				var oldestSyncRecords = false;
+				this.selectedDate = selectedDateFromCalendar;
+				this.setSelectedDate(this.selectedDate);
+				this.getEvents(this.selectedDate);
+				if (!isProcessStarted && navigator.onLine) {
+					this.syncOfflineRecordsToBackendForCurrentDay(selectedDateFromCalendar, selectedDateFromCalendar, selectedDateFromCalendar, oldestSyncRecords)
 				}
 			}
 		},
@@ -1691,10 +1711,12 @@ sap.ui.define([
 			var now1 = dateFrom1
 			var then1 = dateTo1
 			if (this.selectedTab == "quickEntry" && !isProcessStarted) {
-				this.synchronizeOfflineRecordsToBackend(now1, then1, date)
+				// this.synchronizeOfflineRecordsToBackend(now1, then1, date)
+				this.syncOfflineRecordsToBackendForCurrentDay(new Date(), new Date(), new Date(), false) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
 			}
 			else if (this.selectedTab == "eventList" && !isProcessStarted) {
-				this.synchronizeOfflineRecordsToBackend(now1, then1, this.selectedDate)
+				// this.synchronizeOfflineRecordsToBackend(now1, then1, this.selectedDate)
+				this.syncOfflineRecordsToBackendForCurrentDay(now1, then1, this.selectedDate, false)
 			}
 
 		},
@@ -3113,9 +3135,10 @@ sap.ui.define([
 		 * @param {Date} thirdDay - Current Day Value to get the current day events
 		 * @description Function used to sync offline records for the current day.
 		 */
-		syncOfflineRecordsToBackendForCurrentDay: async function (firstDay, lastDay, thirdDay) {
+		syncOfflineRecordsToBackendForCurrentDay: async function (firstDay, lastDay, thirdDay, oldRecordsSyncFlag) {
 			// let offlinerecords = await this.getOfflineRecords();// Need to check whether it is for current day or old days
 			var that = this;
+			// let controlFlag = await this.controlAppClose(true);
 			let offlinerecords = await this.fetchRecordsFromLocalDb(firstDay, '', false);// fetch the offline non synced records from the local database.
 			console.log('Offline records present', offlinerecords)
 			if (navigator.onLine) {
@@ -3165,7 +3188,7 @@ sap.ui.define([
 						console.log('Successful processing of insertedResponse', insertedResponse);
 						//Make use of the response received in the previous calls rather than making a call again.
 						// that.replaceSyncedRecordsInLocalDbUsingAjaxCall(firstDay, lastDay, thirdDay, that.synchronizeAllOfflineRecords())
-						that.replaceSyncedRecordsInLocalDbUsingAjaxCallForCurrentDay(firstDay, thirdDay, onlinerecords, onlinerecordsToDelete)
+						that.replaceSyncedRecordsInLocalDbUsingAjaxCallForCurrentDay(firstDay, thirdDay, onlinerecords, onlinerecordsToDelete, oldRecordsSyncFlag)
 						// that.synchronizeAllOfflineRecords()
 					} catch (error) {
 						console.log("Error in resolving the promises inside syncOfflineRecordsToBackendForCurrentDay function", error)
@@ -3178,7 +3201,7 @@ sap.ui.define([
 					console.log('No Offline records');
 					let onlineRecords = await this.fetchOnlineRecordsUsingAjaxCall(firstDay, lastDay);
 					// that.replaceSyncedRecordsInLocalDbUsingAjaxCall(firstDay, lastDay, thirdDay, that.synchronizeAllOfflineRecords())
-					that.replaceSyncedRecordsInLocalDbUsingAjaxCallForCurrentDay(firstDay, thirdDay, onlineRecords, [])
+					that.replaceSyncedRecordsInLocalDbUsingAjaxCallForCurrentDay(firstDay, thirdDay, onlineRecords, [], oldRecordsSyncFlag)
 				}
 			}
 			else if (!navigator.onLine) {
@@ -3422,7 +3445,7 @@ sap.ui.define([
 				if (offlineRecords.length) {
 					// let geodata = await this.getGeoCoordinates();
 					let offlineRecordsForParticularDay = offlineRecords.filter(o1 => o1.EventDate == dateSelected)
-					let convertedDate = new Date(parseInt(dateSelected.substring(6, dateSelected.length -2 )))
+					let convertedDate = new Date(parseInt(dateSelected.substring(6, dateSelected.length - 2)))
 
 					if (offlineRecordsForParticularDay.length) {
 						isProcessStarted = true;
@@ -3430,7 +3453,7 @@ sap.ui.define([
 						// >>>> Get the Earliest offline Record and Send a Red query to the Server
 						let onlinerecords = await this.fetchOnlineRecordsUsingAjaxCall(convertedDate, convertedDate); //fetching the online records for the current day, both parameters are same
 
-						offlinerecordstoupdate = onlinerecords.filter(o1 => offlineRecords.some(o2 => (o1.TerminalId == o2.TerminalId)))
+						offlinerecordstoupdate = onlinerecords.filter(o1 => offlineRecordsForParticularDay.some(o2 => (o1.TerminalId == o2.TerminalId)))
 
 
 						let updateLocalDbRecordsArray = [];
@@ -3441,7 +3464,7 @@ sap.ui.define([
 
 						}
 
-						offlinerecordstopush = offlineRecords.filter(o1 => !onlinerecords.some(o2 => (o2.TerminalId && o1.TerminalId == o2.TerminalId)))
+						offlinerecordstopush = offlineRecordsForParticularDay.filter(o1 => !onlinerecords.some(o2 => (o2.TerminalId && o1.TerminalId == o2.TerminalId)))
 
 						let postOfflineRecordsArray = [];
 						if (offlinerecordstopush) {
@@ -3515,6 +3538,8 @@ sap.ui.define([
 			try {
 				let handleOldRecordsDayWise = await Promise.all(handleOldRecordsDayWiseArray);
 				console.log('Successful processing of handleOldRecordsDayWise', handleOldRecordsDayWise);
+				// let controlFlag = await this.controlAppClose(false);
+				// console.log('Control Flag', controlFlag)
 			} catch (error) {
 				console.log("Error in resolving the promises inside syncOldestOfflineRecords function", error)
 			}
@@ -3756,87 +3781,92 @@ sap.ui.define([
 		 * @param {*} thirdDay 
 		 * @param {*} onlineRecords 
 		 */
-		replaceSyncedRecordsInLocalDbUsingAjaxCallForCurrentDay: async function (fromDate, thirdDay = '', onlineRecords, onlineRecordsToDelete) {
+		replaceSyncedRecordsInLocalDbUsingAjaxCallForCurrentDay: async function (fromDate, thirdDay = '', onlineRecords, onlineRecordsToDelete, oldRecordsSyncFlag) {
 			console.log('Inside replaceSyncedRecordsInLocalDbUsingAjaxCallForCurrentDay function')
 			var that = this;
-			if (onlineRecords.length) {
-				// Avoiding API Call Starts
-				isProcessStarted = false;// After api execution marking it as false
+			// if (onlineRecords.length) {
+			// Avoiding API Call Starts
+			isProcessStarted = false;// After api execution marking it as false
+			// let controlFlag = await this.controlAppClose(false);
+			// console.log('Control Flag', controlFlag)
 
 
-				//Promise to remove the local db elements based on the id provided.
-				let removeLocalDBElementsPromise = async (id = '') => new Promise((resolve, reject) => {
-					let query = {};
-					if (id) {
-						query = { module: 'TimeEventSetIndividual', isSynced: true, _id: id };
-					} else {
-						let newDate = new Date(Date.UTC(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate())).getTime();
-						query = { module: 'TimeEventSetIndividual', isSynced: true, EventDate: '/Date(' + newDate + ')/' };
+			//Promise to remove the local db elements based on the id provided.
+			let removeLocalDBElementsPromise = async (id = '') => new Promise((resolve, reject) => {
+				let query = {};
+				if (id) {
+					query = { module: 'TimeEventSetIndividual', isSynced: true, _id: id };
+				} else {
+					let newDate = new Date(Date.UTC(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate())).getTime();
+					query = { module: 'TimeEventSetIndividual', isSynced: true, EventDate: '/Date(' + newDate + ')/' };
+				}
+				//Function to identify and remove the records from the local database.
+				db.remove(query, { multi: true }, function (err, numRemoved) {
+					if (err) {
+						reject(err);
 					}
-					//Function to identify and remove the records from the local database.
-					db.remove(query, { multi: true }, function (err, numRemoved) {
-						if (err) {
-							reject(err);
-						}
-						else if (numRemoved) {
-							resolve(numRemoved)
-						}
-						else {
-							resolve('Nothing to remove')
-						}
-					});
+					else if (numRemoved) {
+						resolve(numRemoved)
+					}
+					else {
+						resolve('Nothing to remove')
+					}
+				});
+			})
+
+			//Promise to insert into the local database.
+			let insertElementsInLocalDb = async (element) => new Promise((resolve, reject) => {
+				db.insert(element, function (err, docsInserted) {
+					if (err) {
+						reject(err);
+					} else if (docsInserted) {
+						resolve(docsInserted);
+					}
 				})
+			})
 
-				//Promise to insert into the local database.
-				let insertElementsInLocalDb = async (element) => new Promise((resolve, reject) => {
-					db.insert(element, function (err, docsInserted) {
-						if (err) {
-							reject(err);
-						} else if (docsInserted) {
-							resolve(docsInserted);
-						}
-					})
-				})
-
-				let removeElementsArray = []
-				//Check the length of the records that need to be deleted.
-				if (onlineRecordsToDelete.length) {
-					for (let record of onlineRecordsToDelete) {
-						removeElementsArray.push(removeLocalDBElementsPromise(record._id))
-					}
-
-				} else if (onlineRecordsToDelete.length === 0) {
-					removeElementsArray.push(removeLocalDBElementsPromise())
+			let removeElementsArray = []
+			//Check the length of the records that need to be deleted.
+			if (onlineRecordsToDelete.length) {
+				for (let record of onlineRecordsToDelete) {
+					removeElementsArray.push(removeLocalDBElementsPromise(record._id))
 				}
 
-
-				let insertElementsArray = [];
-				for (let record of onlineRecords) {
-					insertElementsArray.push({ module: 'TimeEventSetIndividual', isSynced: true, ...record });
-				}
-
-				try {
-					let removedElements = await Promise.all(removeElementsArray);
-					let insertElements = await insertElementsInLocalDb(insertElementsArray);
-					console.log('Removed Elements', removedElements);
-					console.log('Inserted Elements', insertElements);
-					isProcessStarted = false;
-					if (onlineRecordsToDelete.length) {
-						that.getEvents(thirdDay);
-					}
-					//Call Synchronize all offline records after done with the current day.
-					// that.synchronizeAllOfflineRecords()
-					that.syncOldestOfflineRecords();
-					that.byId('calendar').setBusy(false);
-				} catch (error) {
-					console.log('Error in replacing the records')
-				}
-
-				// Avoiding API Call ends
-			} else if (onlineRecords.length === 0) {
-				//We will not replace the records
-				console.log('No online records found to match and replace.');
+			} else if (onlineRecordsToDelete.length === 0) {
+				removeElementsArray.push(removeLocalDBElementsPromise())
 			}
+
+
+			let insertElementsArray = [];
+			for (let record of onlineRecords) {
+				insertElementsArray.push({ module: 'TimeEventSetIndividual', isSynced: true, ...record });
+			}
+
+			try {
+				let removedElements = await Promise.all(removeElementsArray);
+				let insertElements = await insertElementsInLocalDb(insertElementsArray);
+				console.log('Removed Elements', removedElements);
+				console.log('Inserted Elements', insertElements);
+				isProcessStarted = false;
+				if (onlineRecords.length) {
+					that.getEvents(thirdDay);
+				}
+				//Call Synchronize all offline records after done with the current day.
+				// that.synchronizeAllOfflineRecords()
+				if (oldRecordsSyncFlag) {
+					that.syncOldestOfflineRecords();
+				}
+				that.byId('calendar').setBusy(false);
+			} catch (error) {
+				console.log('Error in replacing the records')
+			}
+
+			// Avoiding API Call ends
+			// }
+			//  else if (onlineRecords.length === 0) {
+			// 	//We will not replace the records
+			// 	console.log('No online records found to match and replace.');
+			// }
 		},
 
 		/**
@@ -4041,7 +4071,7 @@ sap.ui.define([
 								}
 								else {
 									that.hideBusy();
-									resolve({ oData, oResponse });
+									resolve({ oData, numReplaced });
 								}
 							});
 						var oViewModel = new JSONModel({
@@ -4244,6 +4274,29 @@ sap.ui.define([
 				})
 			})
 
+		},
+
+		/**
+		 * @description Api Call to change the closeFlag status based on the parameter passed in the electron side.
+		 * @param {Boolean} closeFlag - True or false value which is used to determine the app close functionality
+		 * @returns 
+		 */
+		controlAppClose: function (closeFlag) {
+			return new Promise((resolve, reject) => {
+				$.ajax({
+					type: "POST",
+					url: "http://localhost:5858/change-value",
+					data: {
+						"closeFlag": closeFlag
+					},
+					dataType: "json"
+				}).done(function (response) {
+					resolve(response)
+				}).fail(function (error) {
+					reject(error);
+				})
+
+			})
 		},
 
 		/* =========================================================== */
