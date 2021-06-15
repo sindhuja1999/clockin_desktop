@@ -1703,20 +1703,20 @@ sap.ui.define([
 
 		onFlushButton: function () {
 			// syncclocktimer = 300;
-			let date = new Date();
-			date.setDate(date.getDate() - 14)
-			var dateFrom1 = date;
-			date = new Date()
-			var dateTo1 = date;
-			var now1 = dateFrom1
-			var then1 = dateTo1
+			// let date = new Date();
+			// date.setDate(date.getDate() - 14)
+			// var dateFrom1 = date;
+			// date = new Date()
+			// var dateTo1 = date;
+			// var now1 = dateFrom1
+			// var then1 = dateTo1
 			if (this.selectedTab == "quickEntry" && !isProcessStarted) {
 				// this.synchronizeOfflineRecordsToBackend(now1, then1, date)
 				this.syncOfflineRecordsToBackendForCurrentDay(new Date(), new Date(), new Date(), false) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
 			}
 			else if (this.selectedTab == "eventList" && !isProcessStarted) {
 				// this.synchronizeOfflineRecordsToBackend(now1, then1, this.selectedDate)
-				this.syncOfflineRecordsToBackendForCurrentDay(now1, then1, this.selectedDate, false)
+				this.syncOfflineRecordsToBackendForCurrentDay(this.selectedDate, this.selectedDate, this.selectedDate, false)
 			}
 
 		},
