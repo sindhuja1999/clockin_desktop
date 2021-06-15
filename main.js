@@ -36,6 +36,8 @@ server.on('listening', onListening);
 const appName = app.getName();
 const getAppPath = path.join(app.getPath('appData'), appName);
 
+global.close = false;
+
 
 
 // console.log('getAppPath', getAppPath, 'appName', appName, 'appData', app.getPath('appData'))
@@ -115,7 +117,8 @@ myapp.get('/electron', (req, res, next) => {
           res.json({
             accessToken: new Buffer(token).toString('base64'),
             refreshToken: new Buffer(refreshToken).toString('base64'),
-            osHostName
+            osHostName,
+            closeParameter: global.close
           })
           // res.send(data)
         }
@@ -135,6 +138,22 @@ myapp.get('/electron', (req, res, next) => {
     })
   })
 })
+
+
+//Service to change the global variable value for closing of the app.
+myapp.post('/change-value', (req, res, next) => {
+
+  console.log(req.body.closeFlag, typeof req.body.closeFlag)
+  global.close = req.body.closeFlag;
+  res.json({
+    statusCode: 1,
+    statusMessage: 'Updated',
+    data: global.close
+  })
+
+
+})
+
 // catch 404 and forward to error handler
 myapp.use(function (req, res, next) {
   next(createError(404));
