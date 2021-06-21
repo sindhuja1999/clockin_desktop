@@ -885,11 +885,12 @@ sap.ui.define([
 		 * Called when application loads confirmation popup.
 		 * @public
 		 */
-		openConfirmationPopup: function (oSettings, isType, selectedItem) {
+		openConfirmationPopup: async function (oSettings, isType, selectedItem) {
 			var latitude, longitude;
 			var self = this;
 			var oElements = [];
 			var that = this;
+			await self.controlAppClose(true) // Preventing the closing of app when the confirmation pop up opens
 			let query = { module: 'GeoCoordinates' }
 			//Querying the local database for getting the saved geocoordinates
 			db.findOne(query, function (err, data) {
@@ -958,7 +959,7 @@ sap.ui.define([
 						content: [oForm],
 						beginButton: new sap.m.Button({
 							text: oSettings.confirmButtonLabel,
-							press: function () {
+							press: async function () {
 								that.busyDialog.open();
 								if (isType === 'C') {
 									self.createTimeEvent();
@@ -968,12 +969,14 @@ sap.ui.define([
 									self._deleteEntry(selectedItem);
 								}
 								oConfirmDialog.close();
+								// await self.controlAppClose(false) //Release the closing of app when the confirmation pop up closes
 							}
 						}),
 						endButton: new sap.m.Button({
 							text: self.oBundle.getText("cancel"),
-							press: function () {
+							press: async function () {
 								oConfirmDialog.close();
+								await self.controlAppClose(false) //Release the closing of app when the confirmation pop up closes
 							}
 						})
 					}).addStyleClass("sapUiContentPadding sapUiMediumMarginTopBottom");
@@ -2513,7 +2516,7 @@ sap.ui.define([
 					// var date1 = '/Date(' + newDate.getTime() + ')/';
 
 					//Inserting the timeevents set records as offline initially and update the status when the record is posted to backend.
-					db.insert({ module: 'TimeEventSetIndividual', isSynced: false, isPosted: false, ...obj }, function (err, entities) {
+					db.insert({ module: 'TimeEventSetIndividual', isSynced: false, isPosted: false, ...obj }, async function (err, entities) {
 						if (err) {
 							console.log("Error in inserting TimeEventSetIndividual", err)
 						} else if (entities) {
@@ -2541,7 +2544,7 @@ sap.ui.define([
 							if (!isProcessStarted && navigator.onLine) {
 
 								//Adding isProcessing Flag to indicate that the record is being in the process of syncing to backend.
-								db.update({ _id: id }, { $set: { isProcessing: true } }, function (err, numReplaced) {
+								db.update({ _id: id }, { $set: { isProcessing: true } },  function (err, numReplaced) {
 									if (err) {
 										console.log('Error in updating the isProcessing Flag for TimeEventSet', err)
 									}
@@ -2549,10 +2552,11 @@ sap.ui.define([
 										console.log('Replacing of records with is isProcessing Flag is success===> true', numReplaced)
 										isProcessStarted = true;
 										oDataModel.create("/TimeEventSet", payload, {
-											success: function (oData, oResponse) {
+											success: async function (oData, oResponse) {
 												// await new Promise((resolve, reject) => {
 												//Updating the isProcessing Flag to indicate that the record is processed.
 												isProcessStarted = false;
+												await that.controlAppClose(false); //Release the closing of app 
 												db.update({ _id: id, isSynced: false }, { $set: { isSynced: true, isPosted: false, isProcessing: false } }, function (err, numReplaced) {
 													console.log('Replacing of records with is isProcessing Flag is success inside success callback===> false', numReplaced)
 													if (err) {
@@ -2561,8 +2565,10 @@ sap.ui.define([
 												});
 												// })
 											},
-											error: function (err) {
-												console.log(err);
+											error: async function (err) {
+												console.log('Error in oData post Call', err);
+												isProcessStarted = false;
+												await that.controlAppClose(false); //Release the closing of app 
 												//Updating the isProcessing Flag to indicate that the record is processed.
 												db.update({ _id: id, isSynced: false }, { $set: { isProcessing: false } },
 													function (err, numReplaced) {
@@ -2576,6 +2582,9 @@ sap.ui.define([
 										});
 									}
 								})
+							} else if(!navigator.onLine){
+								await self.controlAppClose(false); //Release the closing of app 
+								console.log('Display the message that the system cannot process your records as it is offline currently, will process once it is online(This will be done in UI5 app)')
 							}
 
 							// }
