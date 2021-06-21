@@ -44,6 +44,7 @@ sap.ui.define([
 	}
 	let syncclocktimer = 7200;
 	let isProcessStarted = false;
+	let nonSyncedRecordsToPost = []
 	return BaseController.extend("edu.weill.Timeevents.controller.Overview", {
 		/* =========================================================== */
 		/* controller hooks                                            */
@@ -161,13 +162,13 @@ sap.ui.define([
 			const alertOnlineStatusFinal = () => {
 				intervalTimer = setInterval(function () {
 					syncclocktimer = 7200;
-					date = new Date();
-					date.setDate(date.getDate() - 14)
-					var dateFrom1 = date;
-					date = new Date()
-					var dateTo1 = date;
-					var now1 = dateFrom1
-					var then1 = dateTo1
+					// date = new Date();
+					// date.setDate(date.getDate() - 14)
+					// var dateFrom1 = date;
+					// date = new Date()
+					// var dateTo1 = date;
+					// var now1 = dateFrom1
+					// var then1 = dateTo1
 					// that.synchronizeOfflineRecordsToBackend(now1, then1, date)
 					/* 	if (that.selectedDate) {
 							that.synchronizeOfflineRecordsToBackend(now1, then1, that.selectedDate)
@@ -185,7 +186,7 @@ sap.ui.define([
 					else if (that.selectedTab == "eventList" && !isProcessStarted) {
 						// else if (that.selectedTab == "eventList") {
 						// that.synchronizeOfflineRecordsToBackend(now1, then1, that.selectedDate)
-						that.syncOfflineRecordsToBackendForCurrentDay(now1, then1, that.selectedDate, false);
+						that.syncOfflineRecordsToBackendForCurrentDay(that.selectedDate, that.selectedDate, that.selectedDate, false);
 					}
 
 				}, syncclocktimer * 1000)
@@ -2544,7 +2545,7 @@ sap.ui.define([
 							if (!isProcessStarted && navigator.onLine) {
 
 								//Adding isProcessing Flag to indicate that the record is being in the process of syncing to backend.
-								db.update({ _id: id }, { $set: { isProcessing: true } },  function (err, numReplaced) {
+								db.update({ _id: id }, { $set: { isProcessing: true } }, function (err, numReplaced) {
 									if (err) {
 										console.log('Error in updating the isProcessing Flag for TimeEventSet', err)
 									}
@@ -2582,8 +2583,11 @@ sap.ui.define([
 										});
 									}
 								})
-							} else if(!navigator.onLine){
-								await self.controlAppClose(false); //Release the closing of app 
+							} else if (isProcessStarted && navigator.onLine) {
+								nonSyncedRecordsToPost.push(payload);
+								console.log('Record inserted during the parallel call', payload)
+							} else if (!navigator.onLine) {
+								await that.controlAppClose(false); //Release the closing of app 
 								console.log('Display the message that the system cannot process your records as it is offline currently, will process once it is online(This will be done in UI5 app)')
 							}
 
@@ -3508,12 +3512,13 @@ sap.ui.define([
 		syncOldestOfflineRecords: async function (fromDate = '', toDate = '') {
 			var that = this;
 			let offlineNonSyncedRecords = [], uniqueDates = [];
-			let handleOldRecordsDayWiseArray = []
+			let handleOldRecordsDayWiseArray = [];
+			let geodata;
 			if (fromDate && toDate) {
 				console.log('Called inside fromDate & toDate')
 				//Get the oldest available offline records in the localdatabase that are not synced to the backend.
 				offlineNonSyncedRecords = await that.fetchRecordsFromLocalDb(fromDate, toDate, false);
-				let geodata = await this.getGeoCoordinates();
+				geodata = await this.getGeoCoordinates();
 
 				if (offlineNonSyncedRecords.length) {
 					uniqueDates = [...new Set(offlineNonSyncedRecords.map(item => item.EventDate))];
@@ -3529,7 +3534,7 @@ sap.ui.define([
 			} else {
 				//Fetch the oldest offline records.
 				offlineNonSyncedRecords = await that.getOldestOfflineRecords();
-				let geodata = await this.getGeoCoordinates();
+				geodata = await this.getGeoCoordinates();
 				if (offlineNonSyncedRecords.docs.length) {
 					uniqueDates = [...new Set(offlineNonSyncedRecords.docs.map(item => item.EventDate))];
 					uniqueDates.map((element) => {
@@ -3544,10 +3549,11 @@ sap.ui.define([
 
 				let handleOldRecordsDayWise = await Promise.all(handleOldRecordsDayWiseArray);
 				console.log('Successful processing of handleOldRecordsDayWise', handleOldRecordsDayWise);
-
 				isProcessStarted = false;
 				await this.controlAppClose(isProcessStarted); // isProcessStarted value becomes false.
 				console.log('Control Flag status after done', isProcessStarted, new Date().getTime())
+
+
 			} catch (error) {
 				console.log("Error in resolving the promises inside syncOldestOfflineRecords function", error)
 			}
@@ -3861,6 +3867,28 @@ sap.ui.define([
 				if (oldRecordsSyncFlag) {
 					that.syncOldestOfflineRecords();
 				}
+				let handleNonSyncedRecordsToPostArray = [];
+				//If there are non synced records to post, we will attempt to post them
+				if (nonSyncedRecordsToPost.length) {
+					let geodata = await this.getGeoCoordinates();
+					nonSyncedRecordsToPost.map((record) => {
+						handleNonSyncedRecordsToPostArray.push(that.postOfflineRecordsToBackend(record, geodata))
+					})
+					isProcessStarted = true;
+					await that.controlAppClose(isProcessStarted);
+					await Promise.all(handleNonSyncedRecordsToPostArray);
+					nonSyncedRecordsToPost = []
+					isProcessStarted = false;
+					await that.controlAppClose(isProcessStarted); // isProcessStarted value becomes false.
+					console.log('Control Flag status after posting nonSyncedRecordsToPost records ', isProcessStarted, new Date().getTime())
+					that.byId('calendar').setBusy(false);
+				}
+				// else if (nonSyncedRecordsToPost.length === 0) {
+				// 	isProcessStarted = false;
+				// 	await this.controlAppClose(isProcessStarted); // isProcessStarted value becomes false.
+				// 	console.log('Control Flag status after done', isProcessStarted, new Date().getTime())
+
+				// }
 				that.byId('calendar').setBusy(false);
 			} catch (error) {
 				console.log('Error in replacing the records')
