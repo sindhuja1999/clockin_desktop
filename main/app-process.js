@@ -102,10 +102,21 @@ function createAppWindow() {
     win = null;
   });
 
+  const options = {
+    type: 'warning',
+    buttons: ['Ok'],
+    title: 'Warning',
+    message: 'Data Sync in progress',
+    detail: 'Please wait until the sync is complete before closing the app'
+  };
+
   win.on('close', (e) => {
     console.log('Close button Called', e, global.close)
     if (global.close === 'true') {
       e.preventDefault();
+      dialog.showMessageBox(null, options, (response, checkboxChecked) => {
+        console.log(response);
+      });
     }
     else {
       return e
