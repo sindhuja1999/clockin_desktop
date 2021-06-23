@@ -3155,37 +3155,37 @@ sap.ui.define([
 			if (navigator.onLine) {
 				that.byId("calendar").setBusy(true);
 				if (offlinerecords.length) {
-					let geodata = await this.getGeoCoordinates();
-					// 	>>>> Set Sync Flag as in Process and see if the Window Close can disable
-					isProcessStarted = true;
-					//App Close Prevented by passing the true flag from the api to the electron app.
-					await this.controlAppClose(isProcessStarted); // isProcessStarted value becomes true.
-					console.log('Control Flag status before starting', isProcessStarted, new Date().getTime())
-
-					let offlinerecordstoupdate = [], offlinerecordstopush = [];
-					let onlinerecords = await this.fetchOnlineRecordsUsingAjaxCall(firstDay, lastDay); //fetching the online records for the current day, both parameters are same
-					offlinerecordstoupdate = onlinerecords.filter(o1 => offlinerecords.some(o2 => (o1.TerminalId == o2.TerminalId)))
-
-
-					let updateLocalDbRecordsArray = [];
-					if (offlinerecordstoupdate.length) {
-						for (let record of offlinerecordstoupdate) {
-							updateLocalDbRecordsArray.push(this.updateRecordStatusInLocalDb(record, record.TerminalId, 'TerminalId'))
-						}
-
-					}
-
-					offlinerecordstopush = offlinerecords.filter(o1 => !onlinerecords.some(o2 => (o2.TerminalId && o1.TerminalId == o2.TerminalId)))
-
-					let postOfflineRecordsArray = [];
-					if (offlinerecordstopush) {
-						for (let record of offlinerecordstopush) {
-							postOfflineRecordsArray.push(this.postOfflineRecordsToBackend(record, geodata))
-						}
-
-					}
-
 					try {
+						let geodata = await this.getGeoCoordinates();
+						// 	>>>> Set Sync Flag as in Process and see if the Window Close can disable
+						isProcessStarted = true;
+						//App Close Prevented by passing the true flag from the api to the electron app.
+						await this.controlAppClose(isProcessStarted); // isProcessStarted value becomes true.
+						console.log('Control Flag status before starting', isProcessStarted, new Date().getTime())
+
+						let offlinerecordstoupdate = [], offlinerecordstopush = [];
+						let onlinerecords = await this.fetchOnlineRecordsUsingAjaxCall(firstDay, lastDay); //fetching the online records for the current day, both parameters are same
+						offlinerecordstoupdate = onlinerecords.filter(o1 => offlinerecords.some(o2 => (o1.TerminalId == o2.TerminalId)))
+
+
+						let updateLocalDbRecordsArray = [];
+						if (offlinerecordstoupdate.length) {
+							for (let record of offlinerecordstoupdate) {
+								updateLocalDbRecordsArray.push(this.updateRecordStatusInLocalDb(record, record.TerminalId, 'TerminalId'))
+							}
+						}
+
+						offlinerecordstopush = offlinerecords.filter(o1 => !onlinerecords.some(o2 => (o2.TerminalId && o1.TerminalId == o2.TerminalId)))
+
+						let postOfflineRecordsArray = [];
+						if (offlinerecordstopush) {
+							for (let record of offlinerecordstopush) {
+								postOfflineRecordsArray.push(this.postOfflineRecordsToBackend(record, geodata))
+							}
+
+						}
+
+						// try {
 						let onlinerecordsToDelete = await this.fetchRecordsFromLocalDb(firstDay, '', true);
 						let updatedResponse = await Promise.all(updateLocalDbRecordsArray);
 						let insertedResponse = await Promise.all(postOfflineRecordsArray);
@@ -3195,6 +3195,8 @@ sap.ui.define([
 						//Make use of the response received in the previous calls rather than making a call again.
 						that.replaceSyncedRecordsInLocalDbUsingAjaxCallForCurrentDay(firstDay, thirdDay, onlinerecords, onlinerecordsToDelete, oldRecordsSyncFlag)
 					} catch (error) {
+						isProcessStarted = false;
+						await this.controlAppClose(isProcessStarted);
 						console.log("Error in resolving the promises inside syncOfflineRecordsToBackendForCurrentDay function", error)
 					}
 
@@ -3202,18 +3204,24 @@ sap.ui.define([
 					// }
 				}
 				else if (offlinerecords.length === 0) {
-					console.log('No Offline records');
-					isProcessStarted = true;
-					await this.controlAppClose(isProcessStarted);// isProcessStarted value becomes true.
-					console.log('Control Flag status before start', isProcessStarted, new Date().getTime())
-					//Fetching records for Current Day
-					let onlineRecords = await this.fetchOnlineRecordsUsingAjaxCall(firstDay, lastDay);
+					try {
+						console.log('No Offline records');
+						isProcessStarted = true;
+						await this.controlAppClose(isProcessStarted);// isProcessStarted value becomes true.
+						console.log('Control Flag status before start', isProcessStarted, new Date().getTime())
+						//Fetching records for Current Day
+						let onlineRecords = await this.fetchOnlineRecordsUsingAjaxCall(firstDay, lastDay);
 
-
-					isProcessStarted = false;
-					await this.controlAppClose(isProcessStarted); // isProcessStarted value becomes false.
-					console.log('Control Flag status after done', isProcessStarted, new Date().getTime())
-					that.replaceSyncedRecordsInLocalDbUsingAjaxCallForCurrentDay(firstDay, thirdDay, onlineRecords, [], oldRecordsSyncFlag)
+						//Resuming the app close parameter to false after the api call is done.
+						isProcessStarted = false;
+						await this.controlAppClose(isProcessStarted); // isProcessStarted value becomes false.
+						console.log('Control Flag status after done', isProcessStarted, new Date().getTime())
+						that.replaceSyncedRecordsInLocalDbUsingAjaxCallForCurrentDay(firstDay, thirdDay, onlineRecords, [], oldRecordsSyncFlag)
+					} catch (error) {
+						isProcessStarted = false;
+						await this.controlAppClose(isProcessStarted); // isProcessStarted value becomes false.
+						console.log('Error in replacing the online records using api call', error)
+					}
 				}
 			}
 			else if (!navigator.onLine) {
@@ -4104,14 +4112,10 @@ sap.ui.define([
 								}
 								else {
 									that.hideBusy();
-									resolve({ oData, numReplaced });
+									resolve();
 								}
 							});
-						var oViewModel = new JSONModel({
-							networkStatus: "Offline"
-						});
-						that.getView().setModel(oViewModel, "networkStatusModel");
-						console.log(err);
+						console.log("Error in odata call", err);
 					}
 
 				});
@@ -4303,6 +4307,7 @@ sap.ui.define([
 						})
 					}
 				}).fail((error) => {
+					reject(error)
 					console.log('Error', error)
 				})
 			})
