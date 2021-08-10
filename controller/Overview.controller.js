@@ -1459,7 +1459,7 @@ sap.ui.define([
 		/**
 		 * Function used to get the user timezone present in the local database.
 		 */
-		getUserTimeZone: function () {
+		getUserTimeZone: async function () {
 			return new Promise((resolve, reject) => {
 				db.find({ module: 'ConfigurationSet' }, function (err, docs) {
 					if (err) {
@@ -2524,14 +2524,7 @@ sap.ui.define([
 							that.busyDialog.close();
 							//Online record creation attempt
 							// if (navigator.onLine || 1) {
-							var oDataModel = new sap.ui.model.odata.v2.ODataModel({
-								serviceUrl: oServiceURI + '/odata/SAP/HCMFAB_MYTIMEEVENTS_SRV',
-								useBatch: false,
-								headers: {
-									Authorization: "Bearer " + localStorage.getItem('token'),
-									Accept: "*/*"
-								}
-							});
+
 							let payload = entities;
 							let id = payload._id;
 							delete payload.module;
@@ -2552,39 +2545,57 @@ sap.ui.define([
 									else if (numReplaced) {
 										console.log('Replacing of records with is isProcessing Flag is success===> true', numReplaced)
 										isProcessStarted = true;
-										oDataModel.create("/TimeEventSet", payload, {
-											success: async function (oData, oResponse) {
-												// await new Promise((resolve, reject) => {
-												//Updating the isProcessing Flag to indicate that the record is processed.
-												isProcessStarted = false;
-												await that.controlAppClose(false); //Release the closing of app 
-												db.update({ _id: id, isSynced: false }, { $set: { isSynced: true, isPosted: false, isProcessing: false } }, function (err, numReplaced) {
-													console.log('Replacing of records with is isProcessing Flag is success inside success callback===> false', numReplaced)
-													if (err) {
-														console.log("Error in Finding offline Records", err);
-													}
-												});
-												// })
-											},
-											error: async function (err) {
-												console.log('Error in oData post Call', err);
-												isProcessStarted = false;
-												await that.controlAppClose(false); //Release the closing of app 
-												//Updating the isProcessing Flag to indicate that the record is processed.
-												db.update({ _id: id, isSynced: false }, { $set: { isProcessing: false } },
-													function (err, numReplaced) {
+										var oDataModel = new sap.ui.model.odata.v2.ODataModel({
+											serviceUrl: oServiceURI + '/odata/SAP/HCMFAB_MYTIMEEVENTS_SRV',
+											useBatch: false,
+											headers: {
+												Authorization: "Bearer " + localStorage.getItem('token'),
+												Accept: "*/*"
+											}
+										});
+										console.log(oDataModel);
+										if (oDataModel.getServiceMetadata() === undefined) {
+											console.log('Service Offline or Metadata failed to load')
+											isProcessStarted = false;
+											that.controlAppClose(false);
+										} else if (oDataModel.getServiceMetadata()) {
+											//
+											oDataModel.create("/TimeEventSet", payload, {
+												success: async function (oData, oResponse) {
+													// await new Promise((resolve, reject) => {
+													//Updating the isProcessing Flag to indicate that the record is processed.
+													isProcessStarted = false;
+													await that.controlAppClose(false); //Release the closing of app 
+													db.update({ _id: id, isSynced: false }, { $set: { isSynced: true, isPosted: false, isProcessing: false } }, function (err, numReplaced) {
+														console.log('Replacing of records with is isProcessing Flag is success inside success callback===> false', numReplaced)
 														if (err) {
 															console.log("Error in Finding offline Records", err);
-															// reject();
 														}
 													});
-											}
+													// })
+												},
+												error: async function (err) {
+													console.log('Error in oData post Call', err);
+													isProcessStarted = false;
+													await that.controlAppClose(false); //Release the closing of app 
+													//Updating the isProcessing Flag to indicate that the record is processed.
+													db.update({ _id: id, isSynced: false }, { $set: { isProcessing: false } },
+														function (err, numReplaced) {
+															if (err) {
+																console.log("Error in Finding offline Records", err);
+																// reject();
+															}
+														});
+												}
 
-										});
+											});
+										}
+
 									}
 								})
 							} else if (isProcessStarted && navigator.onLine) {
 								nonSyncedRecordsToPost.push(payload);
+								await that.controlAppClose(false);
 								console.log('Record inserted during the parallel call', payload)
 							} else if (!navigator.onLine) {
 								await that.controlAppClose(false); //Release the closing of app 
@@ -3165,17 +3176,21 @@ sap.ui.define([
 
 						let offlinerecordstoupdate = [], offlinerecordstopush = [];
 						let onlinerecords = await this.fetchOnlineRecordsUsingAjaxCall(firstDay, lastDay); //fetching the online records for the current day, both parameters are same
-						offlinerecordstoupdate = onlinerecords.filter(o1 => offlinerecords.some(o2 => (o1.TerminalId == o2.TerminalId)))
+						// offlinerecordstoupdate = onlinerecords.filter(o1 => offlinerecords.some(o2 => (o1.TerminalId == o2.TerminalId)))
+						//Comparing with CUSTOMER06 Field rather than using Terminal Id.
+						offlinerecordstoupdate = onlinerecords.filter(o1 => offlinerecords.some(o2 => (o1.CUSTOMER06 == o2.CUSTOMER06)))
 
 
 						let updateLocalDbRecordsArray = [];
 						if (offlinerecordstoupdate.length) {
 							for (let record of offlinerecordstoupdate) {
-								updateLocalDbRecordsArray.push(this.updateRecordStatusInLocalDb(record, record.TerminalId, 'TerminalId'))
+								// updateLocalDbRecordsArray.push(this.updateRecordStatusInLocalDb(record, record.TerminalId, 'TerminalId'))
+								updateLocalDbRecordsArray.push(this.updateRecordStatusInLocalDb(record, record.CUSTOMER06, 'CUSTOMER06'))
 							}
 						}
 
-						offlinerecordstopush = offlinerecords.filter(o1 => !onlinerecords.some(o2 => (o2.TerminalId && o1.TerminalId == o2.TerminalId)))
+						// offlinerecordstopush = offlinerecords.filter(o1 => !onlinerecords.some(o2 => (o2.TerminalId && o1.TerminalId == o2.TerminalId)))
+						offlinerecordstopush = offlinerecords.filter(o1 => !onlinerecords.some(o2 => (o2.CUSTOMER06 && o1.CUSTOMER06 == o2.CUSTOMER06)))
 
 						let postOfflineRecordsArray = [];
 						if (offlinerecordstopush) {
@@ -3196,6 +3211,7 @@ sap.ui.define([
 						that.replaceSyncedRecordsInLocalDbUsingAjaxCallForCurrentDay(firstDay, thirdDay, onlinerecords, onlinerecordsToDelete, oldRecordsSyncFlag)
 					} catch (error) {
 						isProcessStarted = false;
+						that.byId("calendar").setBusy(false);
 						await this.controlAppClose(isProcessStarted);
 						console.log("Error in resolving the promises inside syncOfflineRecordsToBackendForCurrentDay function", error)
 					}
@@ -3216,9 +3232,12 @@ sap.ui.define([
 						isProcessStarted = false;
 						await this.controlAppClose(isProcessStarted); // isProcessStarted value becomes false.
 						console.log('Control Flag status after done', isProcessStarted, new Date().getTime())
-						that.replaceSyncedRecordsInLocalDbUsingAjaxCallForCurrentDay(firstDay, thirdDay, onlineRecords, [], oldRecordsSyncFlag)
+						let onlinerecordsToDelete = await this.fetchRecordsFromLocalDb(firstDay, '', true);
+						that.replaceSyncedRecordsInLocalDbUsingAjaxCallForCurrentDay(firstDay, thirdDay, onlineRecords, onlinerecordsToDelete, oldRecordsSyncFlag)
+						// that.replaceSyncedRecordsInLocalDbUsingAjaxCallForCurrentDay(firstDay, thirdDay, onlineRecords, [], oldRecordsSyncFlag)
 					} catch (error) {
 						isProcessStarted = false;
+						that.byId("calendar").setBusy(false);
 						await this.controlAppClose(isProcessStarted); // isProcessStarted value becomes false.
 						console.log('Error in replacing the online records using api call', error)
 					}
@@ -3472,7 +3491,8 @@ sap.ui.define([
 						let offlinerecordstoupdate = [], offlinerecordstopush = [];
 						let onlinerecords = await this.fetchOnlineRecordsUsingAjaxCall(convertedDate, convertedDate); //fetching the online records for the current day, both parameters are same
 
-						offlinerecordstoupdate = onlinerecords.filter(o1 => offlineRecordsForParticularDay.some(o2 => (o1.TerminalId == o2.TerminalId)))
+						// offlinerecordstoupdate = onlinerecords.filter(o1 => offlineRecordsForParticularDay.some(o2 => (o1.TerminalId == o2.TerminalId)))
+						offlinerecordstoupdate = onlinerecords.filter(o1 => offlineRecordsForParticularDay.some(o2 => (o1.CUSTOMER06 == o2.CUSTOMER06)))
 
 
 						let updateLocalDbRecordsArray = [];
@@ -3483,7 +3503,8 @@ sap.ui.define([
 
 						}
 
-						offlinerecordstopush = offlineRecordsForParticularDay.filter(o1 => !onlinerecords.some(o2 => (o2.TerminalId && o1.TerminalId == o2.TerminalId)))
+						// offlinerecordstopush = offlineRecordsForParticularDay.filter(o1 => !onlinerecords.some(o2 => (o2.TerminalId && o1.TerminalId == o2.TerminalId)))
+						offlinerecordstopush = offlineRecordsForParticularDay.filter(o1 => !onlinerecords.some(o2 => (o2.CUSTOMER06 && o1.CUSTOMER06 == o2.CUSTOMER06)))
 
 						let postOfflineRecordsArray = [];
 						if (offlinerecordstopush) {
@@ -3852,8 +3873,10 @@ sap.ui.define([
 					removeElementsArray.push(removeLocalDBElementsPromise(record._id))
 				}
 
-			} else if (onlineRecordsToDelete.length === 0) {
-				removeElementsArray.push(removeLocalDBElementsPromise())
+			} else if (onlineRecordsToDelete.length === 0 && onlineRecords.length) {
+				removeElementsArray.push(removeLocalDBElementsPromise());
+			} else if (onlineRecordsToDelete.length === 0 && onlineRecords.length == 0 ) {
+				console.log('Do Nothing')
 			}
 
 
