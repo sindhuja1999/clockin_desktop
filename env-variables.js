@@ -8,15 +8,14 @@ module.exports = {
     oAuthBaseUrl: 'https://oauthasservices-b7mbepvdgi.us3.hana.ondemand.com',
     oDataEndPoint: 'https://gwaas-b7mbepvdgi.us3.hana.ondemand.com'
   },
-  wcm: {
-    // Git Ignore test with feature branch
+  dev: {
     clientId: 'da94326e-4a70-393c-a6df-a2e1625fa3e6', // Replace with Dev Client Id
     clientSecret: 'wweillcornellgw', // Replace with Dev Client secret
     redirectUri: 'https://localhost:3000/callback', // Remains same or replace it as necessary
     oAuthBaseUrl: 'https://oauthasservices-b7mbepvdgi.us3.hana.ondemand.com', //Remains same or replace it as necessary
     oDataEndPoint: 'https://gwaas-b7mbepvdgi.us3.hana.ondemand.com'
   },
-  qa: {
+  wcm: {
     clientId: '60b0aabb-3422-323c-830f-4fea12621cbf', // Replace with qa Client Id
     //clientSecret: 'wweillcornellgw', // Replace with qa Client secret
     redirectUri: 'https://localhost:3000/callback', // Remains same or replace it as necessary
