@@ -43,6 +43,8 @@ sap.ui.define([
 		}
 	}
 	let syncclocktimer = 7200;
+	let isProcessStarted = false;
+	let nonSyncedRecordsToPost = []
 	return BaseController.extend("edu.weill.Timeevents.controller.Overview", {
 		/* =========================================================== */
 		/* controller hooks                                            */
@@ -63,40 +65,6 @@ sap.ui.define([
 		 * @public
 		 */
 		onInit: function () {
-			//
-
-
-			// var oServiceURI = this.getOwnerComponent().getMetadata().getManifestEntry("sap.app").dataSources["timeEventService"].uri;
-			// const checkOnlineStatus = async () => {
-			// 	try {
-			// 		const online = await fetch(oServiceURI + "/odata/SAP/HCMFAB_MYTIMEEVENTS_SRV/ConfigurationSet");
-			// 		return online.status >= 200 && online.status < 300; // either true or false
-			// 	} catch (err) {
-			// 		return false; // definitely offline
-			// 	}
-			// };
-			// Code to check the network status
-			// setInterval(async () => {
-			// 	const result = await checkOnlineStatus();
-			// 	var oViewModel = new JSONModel({
-			// 		networkStatus: (result ? 'Online' : 'Offline')
-			// 	});
-			// 	window.networkStatus = result;
-			// 	that.getView().setModel(oViewModel, "networkStatusModel");
-
-			// }, 10000); // probably too often, try 10000 for every 10 seconds
-
-			// window.addEventListener("load", async (event) => {
-			// 	let statusDisplay = (await checkOnlineStatus()) ? "Online" : "Offline";
-			// 	var oViewModel = new JSONModel({
-			// 		networkStatus: statusDisplay
-			// 	});
-			// 	window.networkStatus = statusDisplay;
-			// 	// that.getView().setModel(oViewModel, "networkStatusModel");
-			// 	// document.title = 'Timeevents' + statusDisplay
-			// });
-
-			//
 			var that = this;
 			let query = { module: 'EmployeeDetailSet' }
 			//Querying the local database for fetching the employee details
@@ -105,7 +73,6 @@ sap.ui.define([
 					console.log("Error in identifying the time event set individual records", err)
 				} else if (data) {
 					let oUserName = data.EmployeeDetailSet[0].EmployeeName;
-					//oUserName.customStatus = window.onlineStatus;					
 					var oModel = new JSONModel(oUserName);
 					that.getView().setModel(oModel, "userDetails");
 
@@ -113,35 +80,7 @@ sap.ui.define([
 			})
 
 			var intervalTimer;
-			// var syncIntervalTimer;
-			//Code to show the sync timer on the screen default time is 5 minutes.
-			// function formatToHrs(time) {   
-			// 	// Hours, minutes and seconds
-			// 	var hrs = ~~(time / 3600);
-			// 	var mins = ~~((time % 3600) / 60);
-			// 	var secs = ~~time % 60;
 
-			// 	var ret = "";
-			// 	if (hrs > 0) {
-			// 		ret += "" + hrs + ":" + (mins < 10 ? "0" : "");
-			// 	}
-			// 	ret += "" + mins + ":" + (secs < 10 ? "0" : "");
-			// 	ret += "" + secs;
-			// 	return ret;
-			// }
-
-			// setInterval(() => {
-			// 	syncclocktimer--;
-			// 	let timertodisplay = formatToHrs(syncclocktimer)
-
-			// 	// var oViewModel = new JSONModel({
-			// 	// 	syncTimer: syncclocktimer--
-			// 	// });
-			// 	var oViewModel = new JSONModel({
-			// 		syncTimer: timertodisplay
-			// 	});
-			// 	that.getView().setModel(oViewModel, "syncModel");
-			// }, 1000)
 
 
 
@@ -152,26 +91,11 @@ sap.ui.define([
 			const alertOnlineStatusFinal = () => {
 				intervalTimer = setInterval(function () {
 					syncclocktimer = 7200;
-					date = new Date();
-					date.setDate(date.getDate() - 14)
-					var dateFrom1 = date;
-					date = new Date()
-					var dateTo1 = date;
-					var now1 = dateFrom1
-					var then1 = dateTo1
-					// that.synchronizeOfflineRecordsToBackend(now1, then1, date)
-					/* 	if (that.selectedDate) {
-							that.synchronizeOfflineRecordsToBackend(now1, then1, that.selectedDate)
-						}
-						else {
-							that.synchronizeOfflineRecordsToBackend(now1, then1, date)
-						} */
-
-					if (that.selectedTab == "quickEntry") {
-						that.synchronizeOfflineRecordsToBackend(now1, then1, date)
+					if (that.selectedTab == "quickEntry" && !isProcessStarted) {
+						that.syncOfflineRecordsToBackendForCurrentDay(new Date(), new Date(), new Date(), false)
 					}
-					else if (that.selectedTab == "eventList") {
-						that.synchronizeOfflineRecordsToBackend(now1, then1, that.selectedDate)
+					else if (that.selectedTab == "eventList" && !isProcessStarted) {
+						that.syncOfflineRecordsToBackendForCurrentDay(that.selectedDate, that.selectedDate, that.selectedDate, false);
 					}
 
 				}, syncclocktimer * 1000)
@@ -180,7 +104,13 @@ sap.ui.define([
 
 
 			//Calling the sync job to get invoked for every specified interval
-			alertOnlineStatusFinal()
+			alertOnlineStatusFinal();
+
+			//Code for enabling and disabling the sync flag.
+			let syncVisibilityModel = new JSONModel({
+				syncVisibleFlag: true
+			});
+			that.getView().setModel(syncVisibilityModel, "syncVisibility");
 
 			//this.onLoadTable();
 
@@ -227,7 +157,7 @@ sap.ui.define([
 					fnResolve(that.getEvents(new Date()));
 					fnReject();
 				}
-			).then(that.initCalendar(that.empID)).then(that.synchronizeOfflineRecordsToBackend(new Date(), new Date(), new Date())) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
+			).then(that.initCalendar(that.empID)).then(that.syncOfflineRecordsToBackendForCurrentDay(new Date(), new Date(), new Date(), true)) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
 
 			var date = new Date();
 			var selectedTab;
@@ -248,6 +178,13 @@ sap.ui.define([
 						dateValue: new Date()
 					});
 					that.getView().setModel(oViewModel, "timeEventModel");
+
+					//Check the status of the isProcessStarted flag to enable or disable the sync button based on the flag status.
+					syncVisibilityModel = new JSONModel({
+						syncVisibleFlag: !isProcessStarted
+					});
+					that.getView().setModel(syncVisibilityModel, "syncVisibility");
+
 				} catch (e) {
 					jQuery.sap.log.warning("Could not set Time", ["getConfiguration"], ["hcm.myTimeEvents"]);
 				}
@@ -345,31 +282,33 @@ sap.ui.define([
 					date = new Date(oEvent.getSource().getDateValue());
 					date1 = new Date(oEvent.getSource().getDateValue());
 					date.setYear(date.getFullYear());
-					// date.setMonth(date.getMonth(), 1);
 					date.setDate(date.getDate() - 7);
 					this.dateFrom = date;
 					date = new Date(oEvent.getSource().getDateValue());
 					date.setYear(date.getFullYear());
-					// date.setMonth(date.getMonth() + 1, 0);
 					date.setDate(date.getDate() + 7)
 					this.dateTo = date;
 				} else {
 					date = new Date(oEvent.getSource().getSelectedDates()[0].getStartDate());
 					date1 = new Date(oEvent.getSource().getSelectedDates()[0].getStartDate());
 					date.setYear(date.getFullYear());
-					// date.setMonth(date.getMonth(), 1);
 					date.setDate(date.getDate() - 7);
 					this.dateFrom = date;
 					date = new Date(oEvent.getSource().getSelectedDates()[0].getStartDate());
 					date.setYear(date.getFullYear());
-					// date.setMonth(date.getMonth() + 1, 0);
 					date.setDate(date.getDate() + 7)
 					this.dateTo = date;
 				}
-				this.selectedDate = date1;
+
+				//New code for doing it for current day
+				let selectedDateFromCalendar = new Date(oEvent.getSource().getSelectedDates()[0].getStartDate());
+				var oldestSyncRecords = false;
+				this.selectedDate = selectedDateFromCalendar;
 				this.setSelectedDate(this.selectedDate);
 				this.getEvents(this.selectedDate);
-				this.synchronizeOfflineRecordsToBackend(this.dateFrom, this.dateTo, date1) //Mallesh on 18-12-2020 for incresing performance.
+				if (!isProcessStarted && navigator.onLine) {
+					this.syncOfflineRecordsToBackendForCurrentDay(selectedDateFromCalendar, selectedDateFromCalendar, selectedDateFromCalendar, oldestSyncRecords)
+				}
 			}
 		},
 
@@ -843,11 +782,12 @@ sap.ui.define([
 		 * Called when application loads confirmation popup.
 		 * @public
 		 */
-		openConfirmationPopup: function (oSettings, isType, selectedItem) {
+		openConfirmationPopup: async function (oSettings, isType, selectedItem) {
 			var latitude, longitude;
 			var self = this;
 			var oElements = [];
 			var that = this;
+			await self.controlAppClose(true) // Preventing the closing of app when the confirmation pop up opens
 			let query = { module: 'GeoCoordinates' }
 			//Querying the local database for getting the saved geocoordinates
 			db.findOne(query, function (err, data) {
@@ -857,33 +797,13 @@ sap.ui.define([
 				} else if (data) {
 					latitude = data.latitude;
 					longitude = data.longitude;
-					//Code for Geo Location added by Sumanth
 
-					//var onGeoSuccess = function (position) {
 					oElements.push(new sap.m.Label({
 						text: 'Location',
 						design: "Bold"
 					}));
 					oElements.push(new sap.m.Text({
 						text: latitude + '\n' + longitude
-
-						// let query = { module: 'GeoCoordinates' }
-						// db.findOne(query, function (err, data) {
-
-						// 	if (err) {
-						// 		console.log("Error in identifying the time event set individual records", err)
-						// 	} else if (data) {
-						// 		let oUserName = data.EmployeeDetailSet[0].EmployeeName;
-						// 		//oUserName.customStatus = window.onlineStatus;					
-						// 		console.log('user name', oUserName);
-
-						// 		var oModel = new JSONModel(oUserName);
-						// 		that.getView().setModel(oModel, "userDetails");
-
-						// 	}
-						// }) 
-
-
 					}));
 
 					for (var i = 0; i < oSettings.additionalInformation.length; i++) {
@@ -916,7 +836,7 @@ sap.ui.define([
 						content: [oForm],
 						beginButton: new sap.m.Button({
 							text: oSettings.confirmButtonLabel,
-							press: function () {
+							press: async function () {
 								that.busyDialog.open();
 								if (isType === 'C') {
 									self.createTimeEvent();
@@ -930,8 +850,9 @@ sap.ui.define([
 						}),
 						endButton: new sap.m.Button({
 							text: self.oBundle.getText("cancel"),
-							press: function () {
+							press: async function () {
 								oConfirmDialog.close();
+								await self.controlAppClose(false) //Release the closing of app when the confirmation pop up closes
 							}
 						})
 					}).addStyleClass("sapUiContentPadding sapUiMediumMarginTopBottom");
@@ -939,35 +860,6 @@ sap.ui.define([
 				}
 			})
 
-
-
-			/* 			var options = {
-							enableHighAccuracy: true,
-							timeout: 5000,
-							maximumAge: 0
-						  };
-						  
-						  function success(pos) {
-							var crd = pos.coords;
-						  
-							console.log('Your current position is:');
-							console.log(`Latitude : ${crd.latitude}`);
-							console.log(`Longitude: ${crd.longitude}`);
-							console.log(`More or less ${crd.accuracy} meters.`);
-						  }
-						  
-						  function error(err) {
-							console.warn(`ERROR(${err.code}): ${err.message}`);
-						  }
-						  
-						  navigator.geolocation.getCurrentPosition(success, error, options); */
-			//              }
-			//              onGeoError = function (error) {};
-
-			//          sap.ui.Device.geolocation.getCurrentPosition(onGeoSuccess, onGeoError, {
-			//              enableHighAccuracy: true
-			//          });
-			//Code Complete
 		},
 		/**
 		 * Called when application delete time event.
@@ -1413,7 +1305,7 @@ sap.ui.define([
 		/**
 		 * Function used to get the user timezone present in the local database.
 		 */
-		getUserTimeZone: function () {
+		getUserTimeZone: async function () {
 			return new Promise((resolve, reject) => {
 				db.find({ module: 'ConfigurationSet' }, function (err, docs) {
 					if (err) {
@@ -1660,19 +1552,11 @@ sap.ui.define([
 		},
 
 		onFlushButton: function () {
-			// syncclocktimer = 300;
-			let date = new Date();
-			date.setDate(date.getDate() - 14)
-			var dateFrom1 = date;
-			date = new Date()
-			var dateTo1 = date;
-			var now1 = dateFrom1
-			var then1 = dateTo1
-			if (this.selectedTab == "quickEntry") {
-				this.synchronizeOfflineRecordsToBackend(now1, then1, date)
+			if (this.selectedTab == "quickEntry" && !isProcessStarted) {
+				this.syncOfflineRecordsToBackendForCurrentDay(new Date(), new Date(), new Date(), false) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
 			}
-			else if (this.selectedTab == "eventList") {
-				this.synchronizeOfflineRecordsToBackend(now1, then1, this.selectedDate)
+			else if (this.selectedTab == "eventList" && !isProcessStarted) {
+				this.syncOfflineRecordsToBackendForCurrentDay(this.selectedDate, this.selectedDate, this.selectedDate, false)
 			}
 
 		},
@@ -1758,133 +1642,6 @@ sap.ui.define([
 		 * @public
 		 */
 		getEvents: function (date) {
-			// Below code is in the custom online version of time event app
-			// var that = this;
-			// this.byId("idEventsTable").setBusy(true);
-			// var a = new sap.ui.model.Filter({
-			// 	path: "EventDate",
-			// 	operator: sap.ui.model.FilterOperator.EQ,
-			// 	value1: this.oFormatYyyymmdd.format(date)
-			// });
-			// var b = new sap.ui.model.Filter({
-			// 	path: "EmployeeID",
-			// 	operator: sap.ui.model.FilterOperator.EQ,
-			// 	value1: this.empID
-			// });
-			// var f = [];
-			// f.push(a);
-			// f.push(b);
-			// // var o = "EventTime";
-			// var oModel = new sap.ui.model.json.JSONModel();
-			// var mParameters = {
-			// 	filters: f, // your Filter Array
-			// 	// orderby: o,
-			// 	success: function (oData, oResponse) {
-			// 		that.byId("idEventsTable").setBusy(false);
-			// 		var a = oData;
-			// 		that.timeEvents = a;
-			// 		var removeIndices = [];
-			// 		for (var i = 0; i < a.results.length; i++) {
-			// 			try {
-			// 				var date1 = new Date(a.results[i].EventDate);
-			// 				var date2 = new Date(date1.getUTCFullYear(), date1.getUTCMonth(), date1.getUTCDate());
-			// 				date = date2;
-			// 			} catch (o) {
-			// 				date = new Date(a.results[i].EventDate);
-			// 			}
-			// 			a.results[i].EventDate = date;
-			// 			switch (a.results[i].Status) {
-			// 				case "APPROVED":
-			// 					a.results[i].State = "Success";
-			// 					break;
-			// 				case "POSTED":
-			// 					a.results[i].State = "Success";
-			// 					break;
-			// 				case "REJECTED":
-			// 					a.results[i].State = "Error";
-			// 					break;
-			// 				case "SENT":
-			// 					a.results[i].State = "Warning";
-			// 					break;
-			// 				case "HOLIDAY":
-			// 					removeIndices.push(i);
-			// 					break;
-			// 				case "NONWORKING":
-			// 					removeIndices.push(i);
-			// 					break;
-			// 			}
-			// 			if (that.configuration.ModifyAllowed === "X") {
-			// 				a.results[i].ActionModify = "X";
-			// 			}
-			// 			if (that.configuration.DeleteAllowed === "X") {
-			// 				a.results[i].ActionDelete = "X";
-			// 			}
-			// 			switch (a.results[i].Origin) {
-			// 				case "E":
-			// 					a.results[i].type = "Inactive";
-			// 					a.results[i].change = true;
-			// 					break;
-			// 				case "":
-			// 				case "S":
-			// 					if (that.configuration.ModifySubsystem !== undefined &&
-			// 						that.configuration.ModifySubsystem == 'X') {
-			// 						a.results[i].type = "Inactive";
-			// 						a.results[i].change = true;
-			// 					} else {
-			// 						a.results[i].type = "Inactive";
-			// 						a.results[i].change = false;
-			// 						// a.results[i].type = "Inactive";
-			// 					}
-			// 					break;
-			// 				default:
-			// 					a.results[i].type = "Inactive";
-			// 					a.results[i].change = false;
-			// 					// a.results[i].type = "Inactive";
-			// 					break;
-			// 			}
-			// 		}
-			// 		if (removeIndices) {
-			// 			for (var r = removeIndices.length - 1; r >= 0; r--) {
-			// 				a.results.splice(removeIndices[r], 1);
-			// 			}
-			// 		}
-			// 		oModel.setData(a.results);
-			// 		var oSorter1 = new sap.ui.model.Sorter("EventTime/ms", true, false);
-			// 		that.byId('idEventsTable').setModel(oModel, "timeEventList");
-			// 		that.byId('idEventsTable').getBinding("items").sort(oSorter1);
-			// 		var tabEntryList = that.byId("idEventsTable").getItems();
-			// 		for (var k = 0; k < tabEntryList.length; k++) {
-			// 			if (a.results[k].Origin !== "E" || a.results[k].ActionDelete !== "X") {
-			// 				if (tabEntryList[k].getDeleteControl()) {
-			// 					tabEntryList[k].getDeleteControl().setVisible(false);
-			// 				} else {
-			// 					tabEntryList[k].getDeleteControl(event).setVisible(false);
-			// 				}
-			// 			} else {
-			// 				if (tabEntryList[k].getDeleteControl()) {
-			// 					tabEntryList[k].getDeleteControl().setVisible(true);
-			// 				} else {
-			// 					tabEntryList[k].getDeleteControl(event).setVisible(true);
-			// 				}
-			// 			}
-			// 		}
-			// 		if (that.NoCalendarInit === "true") {
-			// 			that.NoCalendarInit = "false";
-			// 		} else {
-			// 			that.initCalendar(that.empID);
-			// 		}
-			// 	},
-			// 	error: function (oError) {
-			// 		that.byId("idEventsTable").setBusy(false);
-			// 		that.processError(oError);
-			// 	}
-			// };
-			// this.oDataModel
-			// 	.read(
-			// 		"/TimeEventSet",
-			// 		mParameters);
-
-
 
 			var that = this;
 			var dt = date;
@@ -1972,46 +1729,11 @@ sap.ui.define([
 		getEventTypes: function (oPernr) {
 			var that = this;
 			//Replaced the code with local DB Read
-			// var a = new sap.ui.model.Filter({
-			// 	path: "EmployeeID",
-			// 	operator: sap.ui.model.FilterOperator.EQ,
-			// 	value1: this.empID
-			// });
-			// var f = [];
-			// f.push(a);
-			// var oModel = new sap.ui.model.json.JSONModel();
-			// var mParameters = {
-			// 	filters: f, // Filter Array
-			// 	success: function (oData, oResponse) {
-			// 		var a = oData;
-			// 		var oFavorites = that.getModel('FavoritesSet').getData();
-			// 		for (var i = 0; i < oFavorites.length; i++) {
-			// 			for (var j = 0; j < a.results.length; j++) {
-			// 				if (oFavorites[i].Subtype == a.results[j].TimeType) {
-			// 					a.results[j].selected = true;
-			// 				}
-			// 			}
-			// 		}
-			// 		oModel.setData(a.results);
-			// 		that.setGlobalModel(oModel, "eventTypeModel");
-			// 		that.setModel(oModel, "timeEventType");
-			// 	},
-			// 	error: function (oError) {
-			// 		that.processError(oError);
-			// 	}
-			// };
-
-			// this.oDataModel
-			// 	.read(
-			// 		"/TimeEventTypeSet",
-			// 		mParameters);
 
 			db.findOne({ module: "TimeEventTypeSet" }, function (err, data) {
 
 				function sortFunc(a, b) {
-					// var sortingArr = [ 'b', 'c', 'b', 'b', 'c', 'd' ];
-					// var order = ["Clock-in", "Start of break", "End of break", "Clock-out"];
-					var order = ["P10", "P15", "P25", "P20"];
+					var order = ["P10", "P15", "P25", "P20"]; // "Clock-in", "Start of break", "End of break", "Clock-out"
 					return order.indexOf(a.TimeType) - order.indexOf(b.TimeType);
 				}
 				data.TimeEventTypeSet.sort(sortFunc);
@@ -2085,101 +1807,6 @@ sap.ui.define([
 				f.push(c);
 			}
 
-			//Below code is standard and to be adjusted for non working day display	
-			// var that = this;
-			// var f = [];
-			// var a = new sap.ui.model.Filter({
-			// 	path: "EmployeeID",
-			// 	operator: sap.ui.model.FilterOperator.EQ,
-			// 	value1: Pernr
-			// });
-			// var b = new sap.ui.model.Filter({
-			// 	path: "DateFrom",
-			// 	operator: sap.ui.model.FilterOperator.EQ,
-			// 	value1: this.dateFrom
-			// });
-			// this.dateTo.setUTCDate(this.dateTo.getUTCDate() + 1);
-			// var c = new sap.ui.model.Filter({
-			// 	path: "DateTo",
-			// 	operator: sap.ui.model.FilterOperator.EQ,
-			// 	value1: this.dateTo
-			// });
-			// f.push(a);
-			// if (this.dateFrom && this.dateTo) {
-			// 	f.push(b);
-			// 	f.push(c);
-			// }
-
-			// var mParameters = {
-			// 	filters: f, // Filter Array
-			// 	success: function (oData, oResponse) {
-			// 		that.calendar.removeAllSpecialDates();
-			// 		that.mCalendar.removeAllSpecialDates();
-			// 		var a = oData;
-			// 		var date;
-			// 		for (var i = 0; i < a.results.length; i++) {
-			// 			try {
-			// 				var date1 = new Date(a.results[i].EventDate);
-			// 				var date2 = new Date(date1.getUTCFullYear(), date1.getUTCMonth(), date1.getUTCDate());
-			// 				date = date2;
-			// 			} catch (o) {
-			// 				date = new Date(a.results[i].EventDate);
-			// 			}
-			// 			a.results[i].EventDate = date;
-			// 			switch (a.results[i].Status) {
-			// 				case "APPROVED":
-			// 					a.results[i].Type = sap.ui.unified.CalendarDayType.Type08;
-			// 					a.results[i].Tooltip = that.oBundle.getText("approved");
-			// 					break;
-			// 				case "POSTED":
-			// 					a.results[i].Type = sap.ui.unified.CalendarDayType.Type08;
-			// 					a.results[i].Tooltip = that.oBundle.getText("approved");
-			// 					break;
-			// 				case "REJECTED":
-			// 					a.results[i].Type = sap.ui.unified.CalendarDayType.Type03;
-			// 					a.results[i].Tooltip = that.oBundle.getText("rejected");
-			// 					break;
-			// 				case "SENT":
-			// 					a.results[i].Type = sap.ui.unified.CalendarDayType.Type00;
-			// 					a.results[i].Tooltip = that.oBundle.getText("sent");
-			// 					break;
-			// 				case "HOLIDAY":
-			// 					a.results[i].Type = sap.ui.unified.CalendarDayType.Type09;
-			// 					if (a.results[i].StatusText != "") {
-			// 						a.results[i].Tooltip = a.results[i].StatusText;
-			// 					} else {
-			// 						a.results[i].Tooltip = that.oBundle.getText("holiday");
-			// 					}
-			// 					break;
-			// 				case "NONWORKING":
-			// 					a.results[i].Type = sap.ui.unified.CalendarDayType.NonWorking;
-			// 					a.results[i].Tooltip = that.oBundle.getText("nonworking");
-			// 					break;
-			// 			}
-			// 			that.calendar.addSpecialDate(new sap.ui.unified.DateTypeRange({
-			// 				startDate: new Date(a.results[i].EventDate),
-			// 				type: a.results[i].Type,
-			// 				tooltip: a.results[i].Tooltip
-			// 			}));
-			// 			that.mCalendar.addSpecialDate(new sap.ui.unified.DateTypeRange({
-			// 				startDate: new Date(a.results[i].EventDate),
-			// 				type: a.results[i].Type,
-			// 				tooltip: a.results[i].Tooltip
-			// 			}));
-
-			// 		}
-			// 		that.calendar.setBusy(false);
-			// 	},
-			// 	error: function (oError) {
-			// 		that.calendar.setBusy(false);
-			// 		that.processError(oError);
-			// 	}
-			// };
-			// this.byId('calendar').setBusy(true);
-			// this.oDataModel
-			// 	.read(
-			// 		"/TimeEventSet",
-			// 		mParameters);
 		},
 		/**
 		 * Called when application is busy in loading data.
@@ -2216,96 +1843,6 @@ sap.ui.define([
 		getConfiguration: function () {
 			var that = this;
 			//Replaced code below with local DB Find
-			// var oModel = new sap.ui.model.json.JSONModel();
-			// this.setGlobalModel(oModel, "configurationModel");
-			// var that = this;
-			// this.showBusy();
-			// var b = new sap.ui.model.Filter({
-			// 	path: "EmployeeID",
-			// 	operator: sap.ui.model.FilterOperator.EQ,
-			// 	value1: this.empID
-			// });
-			// var f = [];
-			// f.push(b);
-			// var mParameters = {
-			// 	filters: f, // your Filter Array
-			// 	success: function (data) {
-			// 		//attempt to release Busy Dialog
-			// 		that.hideBusy();
-			// 		oModel.setData(data.results[0]);
-			// 		that.configuration = data.results[0];
-			// 		that.getView().setModel(oModel, "configurationModel");
-			// 		that.byId("idTimeEventType").setSelectedKey(that.configuration.DefaultEvent);
-			// 		that.onSelectionChange(null, that.configuration.DefaultEvent);
-			// 		that.byId("approver").setValue(that.configuration.ApproverName);
-			// 		that.approverIdSelected = that.configuration.ApproverId;
-			// 		var curDate = new Date();
-			// 		if (that.configuration.CreateAllowed) {
-			// 			if (!that.configuration.PresentDayFlag) {
-			// 				that.byId("save").setEnabled(false);
-			// 			} else {
-			// 				that.byId("save").setEnabled(true);
-			// 			}
-			// 		} else {
-			// 			that.byId("save").setEnabled(false);
-			// 		}
-			// 		if (that.configuration.PresentDayFlag) {
-			// 			if (that.configuration.CreateAllowed) {
-			// 				that.byId("save").setEnabled(true);
-			// 			} else {
-			// 				that.byId("save").setEnabled(false);
-			// 			}
-			// 		} else {
-			// 			if (that.configuration.CreateAllowed) {
-			// 				that.byId("save").setEnabled(true);
-			// 			} else {
-			// 				that.byId("save").setEnabled(false);
-			// 			}
-			// 		}
-			// 		that.byId("datePicker").setDateValue(new Date());
-			// 		// }
-			// 		if (that.configuration.TimeReadOnly) {
-			// 			that.byId("timePicker").setEnabled(false);
-			// 			that.byId("timePicker").setDateValue(new Date());
-			// 		} else {
-			// 			that.byId("timePicker").setEnabled(true);
-			// 			that.byId("timePicker").setDateValue(new Date());
-			// 		}
-			// 		//replace once the model changes
-			// 		if (that.configuration.ApproverReadOnly === 'X') {
-			// 			that.byId("approver").setEnabled(false);
-			// 		} else {
-			// 			that.byId("approver").setEnabled(true);
-			// 		}
-			// 		if (that.configuration.NoticeVisible === 'X') {
-			// 			that.byId("comments").setVisible(true);
-			// 			that.byId("commentsLableId").setVisible(true);
-			// 		} else {
-			// 			that.byId("comments").setVisible(false);
-			// 			that.byId("commentsLableId").setVisible(false);
-			// 		}
-			// 		if (that.configuration.ApproverVisible === 'X') {
-			// 			that.byId("approver").setVisible(true);
-			// 			that.byId("approverLableId").setVisible(true);
-			// 		} else {
-			// 			that.byId("approver").setVisible(false);
-			// 			that.byId("approverLableId").setVisible(false);
-			// 		}
-
-			// 		//Allow deletions or not
-			// 		if (!that.configuration.DeleteAllowed) {
-			// 			that.byId("idEventsTable").setMode("None");
-			// 		}
-			// 	},
-			// 	error: function (oError) {
-			// 		that.hideBusy();
-			// 		that.processError(oError);
-			// 	}
-			// };
-			// this.oDataModel.read(
-			// 	"/ConfigurationSet",
-			// 	mParameters);
-
 			db.find({ module: "ConfigurationSet" }, function (err, data) {
 				var oModel = new sap.ui.model.json.JSONModel();
 				var oData = data[0].ConfigurationSet[0];
@@ -2356,6 +1893,22 @@ sap.ui.define([
 
 			})
 		},
+
+
+		/**
+		 * 
+		 * @param {Number} length - Length parameter to generate a random string based on the length.
+		 * @returns 
+		 */
+		getRandomString: function (length) {
+			var randomChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()';
+			var result = '';
+			for (var i = 0; i < length; i++) {
+				result += randomChars.charAt(Math.floor(Math.random() * randomChars.length));
+			}
+			return result;
+		},
+
 		/**
 		 * Called when user create time event.
 		 * @public
@@ -2375,13 +1928,7 @@ sap.ui.define([
 					latitude = data.latitude;
 					longitude = data.longitude;
 					if (isFav) {
-						// var obj = this.createPostObject('F', customData);
 						var time = that.formatTimeString(new Date());
-						/* 				var time = sap.ui.core.format.DateFormat.getTimeInstance({
-											style: "medium"
-										}).format(new Date()); */
-						// var eventDate = this.formatDateTimeString(customData.date);
-
 						//code for local database date format started
 						var eventDate = customData.date;
 						var dt = eventDate;
@@ -2390,13 +1937,12 @@ sap.ui.define([
 						//code for local database date format ended
 
 						var timezoneOffset = customData.date.getTimezoneOffset() / (-60);
-						// var timeType = customData.Subtype;
 						var timeType = customData.TimeType;
 						var timeTypeText = customData.TimeTypeText;
 						var employeeId = customData.EmployeeID;
 						let currentDate = new Date();
 						var dateParse = sap.ui.core.format.DateFormat.getDateInstance({
-							pattern: "yyyyMMddHHmmss"
+							pattern: "yyyyMMddhhmmss"
 						});
 						let timeStampToAppend = dateParse.format(currentDate);
 						var appStatus;
@@ -2407,11 +1953,11 @@ sap.ui.define([
 							appStatus = "D".concat(navigator.platform.substr(0, 1), "OFL") + timeStampToAppend;
 						}
 						var punchType = timeType + timeStampToAppend;
-						// var employeeId = this.byId("empID").getText();
 						timezoneOffset = timezoneOffset.toFixed(2);
 						let oshostname = localStorage.getItem('osHostName');
 						var lat = latitude.toString();
 						var longit = longitude.toString();
+						let randomString = that.getRandomString(4)
 						var obj = {
 							EmployeeID: employeeId,
 							EventDate: eventDate,
@@ -2423,7 +1969,10 @@ sap.ui.define([
 							CUSTOMER02: longit.length > 20 ? longit.substring(0.20) : longit,
 							CUSTOMER05: appStatus.length > 20 ? appStatus.substring(0, 20) : appStatus,
 							CUSTOMER06: punchType.length > 20 ? punchType.substring(0, 20) : punchType,
-							CUSTOMER07: oshostname.length > 20 ? oshostname.substring(0, 20) : oshostname
+							CUSTOMER07: oshostname.length > 20 ? oshostname.substring(0, 20) : oshostname,
+							AddTerminalID: randomString,
+							TerminalId: randomString,
+							Note: punchType.length > 20 ? punchType.substring(0, 20) : punchType
 						};
 						that.selectedDate = new Date();
 						date.setMonth(date.getMonth() - 1, 1);
@@ -2450,56 +1999,92 @@ sap.ui.define([
 						that.dateTo = date;
 					}
 
-					// var newDate = new Date(Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate(), dt.getHours(), dt.getMinutes(), dt.getSeconds(), dt.getMilliseconds()));
-					// var date1 = '/Date(' + newDate.getTime() + ')/';
-					db.insert({ module: 'TimeEventSetIndividual', isSynced: false, isPosted: false, ...obj }, function (err, entities) {
+
+					//Inserting the timeevents set records as offline initially and update the status when the record is posted to backend.
+					db.insert({ module: 'TimeEventSetIndividual', isSynced: false, isPosted: false, ...obj }, async function (err, entities) {
 						if (err) {
 							console.log("Error in inserting TimeEventSetIndividual", err)
 						} else if (entities) {
 							that.busyDialog.close();
 							//Online record creation attempt
-							if (navigator.onLine || window.networkStatus === 'Online') {
-								var oDataModel = new sap.ui.model.odata.v2.ODataModel({
-									serviceUrl: oServiceURI + '/odata/SAP/HCMFAB_MYTIMEEVENTS_SRV',
-									useBatch: false,
-									headers: {
-										Authorization: "Bearer " + localStorage.getItem('token'),
-										Accept: "*/*"
-									}
-								});
-								let payload = entities;
-								let id = payload._id;
-								delete payload.module;
-								delete payload.isSynced;
-								delete payload._id;
-								delete payload.isPosted;
-								//console.log("Entities are", entities)
-								//console.log("Payload is ", payload)
-								oDataModel.create("/TimeEventSet", payload, {
-									success: function (oData, oResponse) {
-										// await new Promise((resolve, reject) => {
-										db.update({ _id: id, isSynced: false }, { $set: { isSynced: true, isPosted: false } },
-											function (err, numReplaced) {
-												if (err) {
-													console.log("Error in Finding offline Records", err);
-													// reject();
-												}
-												else {
-													// that.hideBusy();
-													// var toastMsg = that.oBundle.getText("timeEventCreated");
-													// sap.m.MessageToast.show(toastMsg, {
-													// 	duration: 3000 
-													// });
-												}
-											});
-										// })
-									},
-									error: function (err) {
-										console.log(err);
-									}
+							// if (navigator.onLine || 1) {
 
-								});
+							let payload = entities;
+							let id = payload._id;
+							delete payload.module;
+							delete payload.isSynced;
+							delete payload._id;
+							delete payload.isPosted;
+							delete payload.isProcessing;
+
+							//>>>> Check if the Sync In Process Flag is in Progress and then call to Server
+							//- If Online, Call to Server 
+							if (!isProcessStarted && navigator.onLine) {
+
+								//Adding isProcessing Flag to indicate that the record is being in the process of syncing to backend.
+								db.update({ _id: id }, { $set: { isProcessing: true } }, function (err, numReplaced) {
+									if (err) {
+										console.log('Error in updating the isProcessing Flag for TimeEventSet', err)
+									}
+									else if (numReplaced) {
+										console.log('Replacing of records with is isProcessing Flag is success===> true', numReplaced)
+										isProcessStarted = true;
+										var oDataModel = new sap.ui.model.odata.v2.ODataModel({
+											serviceUrl: oServiceURI + '/odata/SAP/HCMFAB_MYTIMEEVENTS_SRV',
+											useBatch: false,
+											headers: {
+												Authorization: "Bearer " + localStorage.getItem('token'),
+												Accept: "*/*"
+											}
+										});
+										console.log(oDataModel);
+										if (oDataModel.getServiceMetadata() === undefined) {
+											console.log('Service Offline or Metadata failed to load')
+											isProcessStarted = false;
+											that.controlAppClose(false);
+										} else if (oDataModel.getServiceMetadata()) {
+											//
+											oDataModel.create("/TimeEventSet", payload, {
+												success: async function (oData, oResponse) {
+													// await new Promise((resolve, reject) => {
+													//Updating the isProcessing Flag to indicate that the record is processed.
+													isProcessStarted = false;
+													await that.controlAppClose(false); //Release the closing of app 
+													db.update({ _id: id, isSynced: false }, { $set: { isSynced: true, isPosted: false, isProcessing: false } }, function (err, numReplaced) {
+														console.log('Replacing of records with is isProcessing Flag is success inside success callback===> false', numReplaced)
+														if (err) {
+															console.log("Error in Finding offline Records", err);
+														}
+													});
+													// })
+												},
+												error: async function (err) {
+													console.log('Error in oData post Call', err);
+													isProcessStarted = false;
+													await that.controlAppClose(false); //Release the closing of app 
+													//Updating the isProcessing Flag to indicate that the record is processed.
+													db.update({ _id: id, isSynced: false }, { $set: { isProcessing: false } },
+														function (err, numReplaced) {
+															if (err) {
+																console.log("Error in Finding offline Records", err);
+															}
+														});
+												}
+
+											});
+										}
+
+									}
+								})
+							} else if (isProcessStarted && navigator.onLine) {
+								nonSyncedRecordsToPost.push(payload);
+								await that.controlAppClose(false);
+							} else if (!navigator.onLine) {
+								await that.controlAppClose(false); //Release the closing of app 
+								console.log('Display the message that the system cannot process your records as it is offline currently, will process once it is online(This will be done in UI5 app)')
 							}
+
+							// }
 							//Online record creation attempt end
 							that.hideBusy();
 							var toastMsg = that.oBundle.getText("timeEventCreated");
@@ -3015,79 +2600,237 @@ sap.ui.define([
 
 		},
 
-		/**
-		 * @public
-		 * @description Function to sync the offline generated records to backend system and update the status of the same in the local database once the sync completes.
-		 */
-		synchronizeOfflineRecordsToBackend: async function (firstDay, lastDay, thirdDay) {
-			let offlineRecords = await this.getOfflineRecords();
-			var that = this;
-			if (window.networkStatus === 'Online' || navigator.onLine) {
-				this.byId("calendar").setBusy(true);
-				if (offlineRecords.length) {
-					let geodata = await this.getGeoCoordinates();
-					let postOfflineRecordsArray = []
-					for (let i = 0; i < offlineRecords.length; i++) {
-						postOfflineRecordsArray.push(this.postOfflineRecordsToBackend(offlineRecords[i], geodata))
-					}
-					Promise.all(postOfflineRecordsArray).then((successResp) => {
-						that.replaceSyncedRecordsInLocalDbUsingAjaxCall(firstDay, lastDay, thirdDay)
-					}).catch((error) => {
-						console.log('Error in posting offline records', error)
-						that.replaceSyncedRecordsInLocalDbUsingAjaxCall(firstDay, lastDay, thirdDay)
-					})
-					// }
-				}
-				else if (offlineRecords.length === 0) {
-					that.replaceSyncedRecordsInLocalDbUsingAjaxCall(firstDay, lastDay, thirdDay)
-				}
-			}
-			else if (window.networkStatus === 'Offline' || !navigator.onLine) {
-				console.log('System is in offline mode')
-			}
-
-		},
 
 		/**
-		 * @public
-		 * @description Function to sync the offline generated records to backend system and update the status of the same in the local database once the sync completes.
+		 * 
+		 * @param {Date} firstDay - From Date Parameter
+		 * @param {Date} lastDay - To Date Parameter
+		 * @param {Date} thirdDay - Current Day Value to get the current day events
+		 * @param {Boolean} oldRecordsSyncFlag - Boolean Flag to control the app for syncing offline records when using this function in calendar navigation
+		 * @description Function used to sync offline records for the current day.
 		 */
-		synchronizeOfflineRecordsToBackendTwo: async function (firstDay, lastDay, thirdDay) {
-			let offlineRecords = await this.getOfflineRecords();
+		syncOfflineRecordsToBackendForCurrentDay: async function (firstDay, lastDay, thirdDay, oldRecordsSyncFlag) {
 			var that = this;
+			let offlinerecords = await this.fetchRecordsFromLocalDb(firstDay, '', false);// fetch the offline non synced records from the local database.
 			if (navigator.onLine) {
-				this.byId("calendar").setBusy(true);
-				if (offlineRecords.length) {
-					let geodata = await this.getGeoCoordinates();
-					let postOfflineRecordsArray = []
-					for (let i = 0; i < offlineRecords.length; i++) {
-						postOfflineRecordsArray.push(this.postOfflineRecordsToBackend(offlineRecords[i], geodata))
+				that.byId("calendar").setBusy(true);
+				if (offlinerecords.length) {
+					try {
+						let geodata = await this.getGeoCoordinates();
+						// 	>>>> Set Sync Flag as in Process and see if the Window Close can disable
+						isProcessStarted = true;
+						//App Close Prevented by passing the true flag from the api to the electron app.
+						await this.controlAppClose(isProcessStarted); // isProcessStarted value becomes true.
+						console.log('Control Flag status before starting', isProcessStarted, new Date().getTime())
+
+						let offlinerecordstoupdate = [], offlinerecordstopush = [];
+						let onlinerecords = await this.fetchOnlineRecordsUsingAjaxCall(firstDay, lastDay); //fetching the online records for the current day, both parameters are same
+						//Comparing with CUSTOMER06 Field rather than using Terminal Id.
+						offlinerecordstoupdate = onlinerecords.filter(o1 => offlinerecords.some(o2 => (o1.CUSTOMER06 == o2.CUSTOMER06)))
+
+
+						let updateLocalDbRecordsArray = [];
+						if (offlinerecordstoupdate.length) {
+							for (let record of offlinerecordstoupdate) {
+								updateLocalDbRecordsArray.push(this.updateRecordStatusInLocalDb(record, record.CUSTOMER06, 'CUSTOMER06'))
+							}
+						}
+
+						offlinerecordstopush = offlinerecords.filter(o1 => !onlinerecords.some(o2 => (o2.CUSTOMER06 && o1.CUSTOMER06 == o2.CUSTOMER06)))
+
+						let postOfflineRecordsArray = [];
+						if (offlinerecordstopush) {
+							for (let record of offlinerecordstopush) {
+								postOfflineRecordsArray.push(this.postOfflineRecordsToBackend(record, geodata))
+							}
+
+						}
+
+						// try {
+						let onlinerecordsToDelete = await this.fetchRecordsFromLocalDb(firstDay, '', true);
+						let updatedResponse = await Promise.all(updateLocalDbRecordsArray);
+						let insertedResponse = await Promise.all(postOfflineRecordsArray);
+						isProcessStarted = false;
+						await this.controlAppClose(isProcessStarted); // isProcessStarted value becomes false.
+						console.log('Control Flag status after completion', isProcessStarted, new Date().getTime())
+						//Make use of the response received in the previous calls rather than making a call again.
+						that.replaceSyncedRecordsInLocalDbUsingAjaxCallForCurrentDay(firstDay, thirdDay, onlinerecords, onlinerecordsToDelete, oldRecordsSyncFlag)
+					} catch (error) {
+						isProcessStarted = false;
+						that.byId("calendar").setBusy(false);
+						await this.controlAppClose(isProcessStarted);
+						console.log("Error in resolving the promises inside syncOfflineRecordsToBackendForCurrentDay function", error)
 					}
-					Promise.all(postOfflineRecordsArray).then((successResp) => {
-						that.replaceSyncedRecordsInLocalDbUsingAjaxCall(firstDay, lastDay, thirdDay)
-					}).catch((error) => {
-						console.log('Error in posting offline records', error)
-						that.replaceSyncedRecordsInLocalDbUsingAjaxCall(firstDay, lastDay, thirdDay)
-					})
+
+
 					// }
 				}
-				else if (offlineRecords.length === 0) {
-					that.replaceSyncedRecordsInLocalDbUsingAjaxCall(firstDay, lastDay, thirdDay)
+				else if (offlinerecords.length === 0) {
+					try {
+						isProcessStarted = true;
+						await this.controlAppClose(isProcessStarted);// isProcessStarted value becomes true.
+						//Fetching records for Current Day
+						let onlineRecords = await this.fetchOnlineRecordsUsingAjaxCall(firstDay, lastDay);
+
+						//Resuming the app close parameter to false after the api call is done.
+						isProcessStarted = false;
+						await this.controlAppClose(isProcessStarted); // isProcessStarted value becomes false.
+						let onlinerecordsToDelete = await this.fetchRecordsFromLocalDb(firstDay, '', true);
+						that.replaceSyncedRecordsInLocalDbUsingAjaxCallForCurrentDay(firstDay, thirdDay, onlineRecords, onlinerecordsToDelete, oldRecordsSyncFlag)
+					} catch (error) {
+						isProcessStarted = false;
+						that.byId("calendar").setBusy(false);
+						await this.controlAppClose(isProcessStarted); // isProcessStarted value becomes false.
+						console.log('Error in replacing the online records using api call', error)
+					}
 				}
 			}
-			else if (window.networkStatus === 'Offline' || !navigator.onLine) {
+			else if (!navigator.onLine) {
 				console.log('System is in offline mode')
 			}
 
 		},
 
 		/**
-		 * @public 
-		 * @description Function to get the records punched in the offline mode from the local database.
+		 * @public
+		 * @description Function used to replace the records by comparing with the api data for that particular day and replace the data only for that particular day
+		 * @param {*} dateSelected - Date Parameter passed from the previous function call
+		 * @param {*} offlineRecords - All Offline Records Available in local database.
+		 * @param {*} geodata - Geo Coordinates Data
+		 * @returns 
 		 */
-		getOfflineRecords: function () {
+		replaceRecordsForParticularDay: async function (dateSelected, offlineRecords, geodata) {
+			console.log('Called inside replaceRecordsForParticularDay function', dateSelected, offlineRecords, geodata)
+			return new Promise(async (resolve, reject) => {
+				if (offlineRecords.length) {
+					let offlineRecordsForParticularDay = offlineRecords.filter(o1 => o1.EventDate == dateSelected)
+					let convertedDate = new Date(parseInt(dateSelected.substring(6, dateSelected.length - 2)))
+
+					if (offlineRecordsForParticularDay.length) {
+						isProcessStarted = true;
+						let offlinerecordstoupdate = [], offlinerecordstopush = [];
+						let onlinerecords = await this.fetchOnlineRecordsUsingAjaxCall(convertedDate, convertedDate); //fetching the online records for the current day, both parameters are same
+
+						// offlinerecordstoupdate = onlinerecords.filter(o1 => offlineRecordsForParticularDay.some(o2 => (o1.TerminalId == o2.TerminalId)))
+						offlinerecordstoupdate = onlinerecords.filter(o1 => offlineRecordsForParticularDay.some(o2 => (o1.CUSTOMER06 == o2.CUSTOMER06)))
+
+
+						let updateLocalDbRecordsArray = [];
+						if (offlinerecordstoupdate.length) {
+							for (let record of offlinerecordstoupdate) {
+								updateLocalDbRecordsArray.push(this.updateRecordStatusInLocalDb(record, record.TerminalId, 'TerminalId'))
+							}
+
+						}
+
+						// offlinerecordstopush = offlineRecordsForParticularDay.filter(o1 => !onlinerecords.some(o2 => (o2.TerminalId && o1.TerminalId == o2.TerminalId)))
+						offlinerecordstopush = offlineRecordsForParticularDay.filter(o1 => !onlinerecords.some(o2 => (o2.CUSTOMER06 && o1.CUSTOMER06 == o2.CUSTOMER06)))
+
+						let postOfflineRecordsArray = [];
+						if (offlinerecordstopush) {
+							for (let record of offlinerecordstopush) {
+								postOfflineRecordsArray.push(this.postOfflineRecordsToBackend(record, geodata))
+							}
+
+						}
+						try {
+							let updatedResponse = await Promise.all(updateLocalDbRecordsArray);
+							let insertedResponse = await Promise.all(postOfflineRecordsArray);
+							console.log('Successful processing of updatedResponse', updatedResponse);
+							console.log('Successful processing of insertedResponse', insertedResponse);
+							resolve();
+						} catch (error) {
+							reject();
+							console.log("Error in resolving the promises inside replaceRecordsForParticularDay function", error)
+						}
+
+					} else if (offlineRecordsForParticularDay.length === 0) {
+						resolve()
+					}
+				}
+
+			})
+
+		},
+
+		/**
+		 * @description Function to sync all the offline records apart from the current day
+		 * @param {*} fromDate -Optional fromDate Parameter
+		 * @param {*} toDate - Optional toDate Parameter
+		 */
+		syncOldestOfflineRecords: async function (fromDate = '', toDate = '') {
+			var that = this;
+			let offlineNonSyncedRecords = [], uniqueDates = [];
+			let handleOldRecordsDayWiseArray = [];
+			let geodata;
+			if (fromDate && toDate) {
+				console.log('Called inside fromDate & toDate')
+				//Get the oldest available offline records in the localdatabase that are not synced to the backend.
+				offlineNonSyncedRecords = await that.fetchRecordsFromLocalDb(fromDate, toDate, false);
+				geodata = await this.getGeoCoordinates();
+
+				if (offlineNonSyncedRecords.length) {
+					uniqueDates = [...new Set(offlineNonSyncedRecords.map(item => item.EventDate))];
+					uniqueDates.map((element) => {
+						handleOldRecordsDayWiseArray.push(that.replaceRecordsForParticularDay(element, offlineNonSyncedRecords, geodata))
+					})
+				}
+
+
+				//Avoid this online call and compare the offline records available for the particular dates and make the api calls only for that particular day
+
+				// onlinerecords = await this.fetchOnlineRecordsUsingAjaxCall(fromDate, toDate);
+			} else {
+				//Fetch the oldest offline records.
+				offlineNonSyncedRecords = await that.getOldestOfflineRecords();
+				geodata = await this.getGeoCoordinates();
+				if (offlineNonSyncedRecords.docs.length) {
+					uniqueDates = [...new Set(offlineNonSyncedRecords.docs.map(item => item.EventDate))];
+					uniqueDates.map((element) => {
+						handleOldRecordsDayWiseArray.push(that.replaceRecordsForParticularDay(element, offlineNonSyncedRecords.docs, geodata))
+					})
+				}
+			}
+			try {
+				isProcessStarted = true;
+				await this.controlAppClose(isProcessStarted); // isProcessStarted value becomes true.
+
+				let handleOldRecordsDayWise = await Promise.all(handleOldRecordsDayWiseArray);
+
+				isProcessStarted = false;
+				await this.controlAppClose(isProcessStarted); // isProcessStarted value becomes false.
+
+			} catch (error) {
+				console.log("Error in resolving the promises inside syncOldestOfflineRecords function", error)
+			}
+		},
+
+
+		/**
+		 * 
+		 * @param {Date} filtercondition1 - Date Passed to the Function to fetch the records for that particular day from the local database.
+		 * @param {Date} filtercondition2 - Date Passed to the Function to fetch the records for that particular day from the local database.
+		 * @param {*} syncFlag - Sync Flag to identify the synced and non-synced records.
+		 * @description Function to get the records from the local database based on the sync flag, if sync flag is true we are getting the synced recods,
+		 * if sync flag is false we will fetch the offline non-synced records.
+		 * @returns 
+		 */
+		fetchRecordsFromLocalDb: async function (filtercondition1, filtercondition2, syncFlag) {
+			let query = { module: 'TimeEventSetIndividual', isSynced: syncFlag }
+			if (filtercondition1 && filtercondition2) {
+				let newDate1 = new Date(Date.UTC(filtercondition1.getFullYear(), filtercondition1.getMonth(), filtercondition1.getDate()));
+				let newDate2 = new Date(Date.UTC(filtercondition2.getFullYear(), filtercondition2.getMonth(), filtercondition2.getDate()));
+				let filteredDate1 = '/Date(' + newDate1.getTime() + ')/';
+				let filteredDate2 = '/Date(' + newDate2.getTime() + ')/';
+				query = { module: 'TimeEventSetIndividual', isSynced: syncFlag, EventDate: { $gte: filteredDate1, $lte: filteredDate2 } }
+			}
+			if (filtercondition1) {
+				let newDate = new Date(Date.UTC(filtercondition1.getFullYear(), filtercondition1.getMonth(), filtercondition1.getDate()));
+				let filteredDate = '/Date(' + newDate.getTime() + ')/';
+				query = { module: 'TimeEventSetIndividual', isSynced: syncFlag, EventDate: filteredDate }
+			}
 			return new Promise((resolve, reject) => {
-				db.find({ module: 'TimeEventSetIndividual', isSynced: false }, function (err, docs) {
+				db.find(query, function (err, docs) {
 					if (err) {
 						console.log('Error in finding TimeEventSetIndividual', err);
 						reject(err)
@@ -3101,91 +2844,206 @@ sap.ui.define([
 		},
 
 		/**
-		* 
-		* @param {Date} fromDate  From Date Parameter passed to the function.
-		* @param {Date} toDate To Date Parameter passed to the function.
-		 * @description Function used to replace synced records in local db.
+		 * @public 
+		 * @deprecated -- Not in use.
+		 * @description Function to get the records punched in the offline mode from the local database. If date parameter is passed it will fetch the result matching to that date, else it will fetch all
+		 * the available offline records from the database.
 		 */
-		replaceSyncedRecordsInLocalDbUsingAjaxCall: function (fromDate, toDate, thirdDay) {
-			var now = new Date(fromDate.getTime() - fromDate.getTimezoneOffset() * 60000).toISOString().replace('Z', '')
-			var then = new Date(toDate.getTime() - toDate.getTimezoneOffset() * 60000).toISOString().replace('Z', '')
-			var that = this;
-			var oServiceURI = this.getOwnerComponent().getMetadata().getManifestEntry("sap.app").dataSources["timeEventService"].uri;
+		getOfflineRecords: async function (filtercondition = '') {
+			// console.log('Inside getOffline Records function call')
+			let query = { module: 'TimeEventSetIndividual', isSynced: false }
+			if (filtercondition) {
+				let newDate = new Date(Date.UTC(filtercondition.getFullYear(), filtercondition.getMonth(), filtercondition.getDate()));
+				let filteredDate = '/Date(' + newDate.getTime() + ')/';
+				// console.log('Inside filter condition', filtercondition, filteredDate)
+				query = { module: 'TimeEventSetIndividual', isSynced: false, EventDate: filteredDate }
+				// query = { module: 'TimeEventSetIndividual', EventDate: filteredDate }
+			}
+			return new Promise((resolve, reject) => {
+				db.find(query, function (err, docs) {
+					if (err) {
+						console.log('Error in finding TimeEventSetIndividual', err);
+						reject(err)
+					}
+					else if (docs) {
+						resolve(docs);
+					}
+				})
 
+			})
+		},
+
+		/**
+		 * @description Function to get the oldest offline records available, along with the oldest date of the records.
+		 */
+		getOldestOfflineRecords: async function () {
+			let query = { module: 'TimeEventSetIndividual', isSynced: false }
+			return new Promise((resolve, reject) => {
+				db.find(query).sort({ "EventDate": 1 }).exec(function (err, docs) {
+					if (err) {
+						console.log('Error in finding oldest offline records', err);
+						reject(err)
+					}
+					else if (docs) {
+						// resolve(docs);
+						resolve({
+							docs,
+							oldestrecord: docs[0]
+						})
+					}
+				})
+
+			})
+		},
+
+
+		/**
+		 * 
+		 * @param {Date} fromDate - From Date field to pass as a filter to the query
+		 * @param {Date} toDate - To Date field to pass as a filter to the query
+		 * @description - Function to fetch the backend available records using ajax call, it accepts two parameters and returns a result set. 
+		 */
+		fetchOnlineRecordsUsingAjaxCall: async function (fromDate, toDate) {
+			console.log('From Date', fromDate, 'TO Date', toDate)
+			let now = new Date(fromDate.getTime() - fromDate.getTimezoneOffset() * 60000).toISOString().replace('Z', '')
+			let then = new Date(toDate.getTime() - toDate.getTimezoneOffset() * 60000).toISOString().replace('Z', '')
+			let oServiceURI = this.getOwnerComponent().getMetadata().getManifestEntry("sap.app").dataSources["timeEventService"].uri;
 			const options = {
 				headers: { 'Authorization': 'Bearer ' + localStorage.token }
 			};
-			axios.get(oServiceURI + "/odata/sap/HCMFAB_MYTIMEEVENTS_SRV/TimeEventSet?$filter=DateFrom eq datetime'" + now + "' and DateTo eq datetime'" + then + "'", options).then(async (filteredData) => {
-				let filteredRecords = filteredData.data.d.results
-				let removeLocalElementsPromise = new Promise((resolve, reject) => {
-					// var dt = new Date();
-					var newDate = new Date(Date.UTC(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate())).getTime();
-					var newDate1 = new Date(Date.UTC(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate())).getTime();
-					var newDate2 = new Date(Date.UTC(toDate.getFullYear(), toDate.getMonth(), toDate.getDate())).getTime();
-					let query = {};
-					if (fromDate === toDate) {
-						query = { module: 'TimeEventSetIndividual', isSynced: true, EventDate: '/Date(' + newDate + ')/' };
-					} else if (fromDate !== toDate) {
-						query = { module: 'TimeEventSetIndividual', isSynced: true, EventDate: { $gte: '/Date(' + newDate1 + ')/', $lte: '/Date(' + newDate2 + ')/' } };
-					}
-
-					db.remove(query, { multi: true }, function (err, numRemoved) {
-						if (err) {
-							reject(err);
-						}
-						else if (numRemoved) {
-							resolve(numRemoved)
-						}
-						else {
-							resolve('Nothing to remove')
-						}
-
-					});
+			return new Promise((resolve, reject) => {
+				axios.get(oServiceURI + "/odata/sap/HCMFAB_MYTIMEEVENTS_SRV/TimeEventSet?$filter=DateFrom eq datetime'" + now + "' and DateTo eq datetime'" + then + "'", options).then(async (filteredData) => {
+					let filteredRecords = filteredData.data.d.results;
+					resolve(filteredRecords)
+				}).catch((error) => {
+					reject(error)
+					console.log('Error in making ajax call', error)
 				})
-				let removedElements = await removeLocalElementsPromise;
-
-				let insertElementsInLocalDb = (element) => new Promise((resolve, reject) => {
-					db.insert(element, function (err, docsInserted) {
-						if (err) {
-							reject(err);
-						} else if (docsInserted) {
-							resolve(docsInserted);
-						}
-					})
-				})
-
-				let insertElementsArray = [];
-				//Custom Database code ends.
-				for (var i = 0; i < filteredRecords.length; i++) {
-					insertElementsArray.push({ module: 'TimeEventSetIndividual', isSynced: true, ...filteredRecords[i] });
-
-				}
-				insertElementsInLocalDb(insertElementsArray).then((successResponse) => {
-					that.getEvents(thirdDay)
-					that.byId('calendar').setBusy(false);
-				}).catch((error) => console.log('Error in resolving the insertElementsArray promise', error))
-
-			}).catch((error) => {
-				this.byId("calendar").setBusy(false);
-				var oViewModel = new JSONModel({
-					networkStatus: "Offline"
-				});
-				this.getView().setModel(oViewModel, "networkStatusModel");
-				console.log('Error in making ajax call', error)
 			})
-
-
 		},
 
+
+
+		/**
+		 * @description Function used to replace the data for current day
+		 * @param {*} fromDate - From Date Parameter Passed
+		 * @param {*} thirdDay - Date Parameter
+		 * @param {*} onlineRecords 
+		 * @param {*} onlineRecordsToDelete 
+		 * @param {*} oldRecordsSyncFlag 
+		 */
+		replaceSyncedRecordsInLocalDbUsingAjaxCallForCurrentDay: async function (fromDate, thirdDay = '', onlineRecords, onlineRecordsToDelete, oldRecordsSyncFlag) {
+			var that = this;
+			// if (onlineRecords.length) {
+
+			//Promise to remove the local db elements based on the id provided.
+			let removeLocalDBElementsPromise = async (id = '') => new Promise((resolve, reject) => {
+				let query = {};
+				if (id) {
+					query = { module: 'TimeEventSetIndividual', isSynced: true, _id: id };
+				} else {
+					let newDate = new Date(Date.UTC(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate())).getTime();
+					query = { module: 'TimeEventSetIndividual', isSynced: true, EventDate: '/Date(' + newDate + ')/' };
+				}
+				//Function to identify and remove the records from the local database.
+				db.remove(query, { multi: true }, function (err, numRemoved) {
+					if (err) {
+						reject(err);
+					}
+					else if (numRemoved) {
+						resolve(numRemoved)
+					}
+					else {
+						resolve('Nothing to remove')
+					}
+				});
+			})
+
+			//Promise to insert into the local database.
+			let insertElementsInLocalDb = async (element) => new Promise((resolve, reject) => {
+				db.insert(element, function (err, docsInserted) {
+					if (err) {
+						reject(err);
+					} else if (docsInserted) {
+						resolve(docsInserted);
+					}
+				})
+			})
+
+			let removeElementsArray = []
+			//Check the length of the records that need to be deleted.
+			if (onlineRecordsToDelete.length) {
+				for (let record of onlineRecordsToDelete) {
+					removeElementsArray.push(removeLocalDBElementsPromise(record._id))
+				}
+
+			} else if (onlineRecordsToDelete.length === 0 && onlineRecords.length) {
+				removeElementsArray.push(removeLocalDBElementsPromise());
+			} else if (onlineRecordsToDelete.length === 0 && onlineRecords.length == 0) {
+				console.log('Do Nothing')
+			}
+
+
+			let insertElementsArray = [];
+			for (let record of onlineRecords) {
+				insertElementsArray.push({ module: 'TimeEventSetIndividual', isSynced: true, ...record });
+			}
+
+			try {
+				let removedElements = await Promise.all(removeElementsArray);
+				let insertElements = await insertElementsInLocalDb(insertElementsArray);
+				console.log('Removed Elements', removedElements);
+				console.log('Inserted Elements', insertElements);
+				// if (onlineRecords.length) {
+				that.getEvents(thirdDay);
+				// }
+				//Call Synchronize all offline records after done with the current day.
+				// that.synchronizeAllOfflineRecords()
+				if (oldRecordsSyncFlag) {
+					that.syncOldestOfflineRecords();
+				}
+				let handleNonSyncedRecordsToPostArray = [];
+				//If there are non synced records to post, we will attempt to post them
+				if (nonSyncedRecordsToPost.length) {
+					let geodata = await this.getGeoCoordinates();
+					nonSyncedRecordsToPost.map((record) => {
+						handleNonSyncedRecordsToPostArray.push(that.postOfflineRecordsToBackend(record, geodata))
+					})
+					isProcessStarted = true;
+					await that.controlAppClose(isProcessStarted);
+					await Promise.all(handleNonSyncedRecordsToPostArray);
+					nonSyncedRecordsToPost = []
+					isProcessStarted = false;
+					await that.controlAppClose(isProcessStarted); // isProcessStarted value becomes false.
+					console.log('Control Flag status after posting nonSyncedRecordsToPost records ', isProcessStarted, new Date().getTime())
+					that.byId('calendar').setBusy(false);
+				}
+				// else if (nonSyncedRecordsToPost.length === 0) {
+				// 	isProcessStarted = false;
+				// 	await this.controlAppClose(isProcessStarted); // isProcessStarted value becomes false.
+				// 	console.log('Control Flag status after done', isProcessStarted, new Date().getTime())
+
+				// }
+				that.byId('calendar').setBusy(false);
+			} catch (error) {
+				console.log('Error in replacing the records')
+			}
+
+			// Avoiding API Call ends
+
+		},
 
 		/**
 		 * @description Function to post the offline records to backend.
 		 * @param {Object} record Offline record that need to be posted to backend oData system
 		 * @param {Object} geodata Geo-Coordinates passed to the offline function to compare if there are any differences in the lat, long coordinates.
 		 */
-		postOfflineRecordsToBackend: function (record, geodata) {
+		postOfflineRecordsToBackend: async function (record, geodata) {
+			//This fucntion resembles for the most part with the createTimeEventMob, check for the possibilities and try to use one single function.
 			var that = this;
 			return new Promise((resolve, reject) => {
+
+				//Posting to backend starts
 				let oServiceURI = this.getOwnerComponent().getMetadata().getManifestEntry("sap.app").dataSources["timeEventService"].uri;
 				//Posting to backend record by record.
 				let latitudeNew = geodata.latitude.toString();
@@ -3205,13 +3063,15 @@ sap.ui.define([
 				delete payload.isSynced;
 				delete payload._id;
 				delete payload.isPosted;
+				delete payload.isProcessing;
 				if (payload.latitude != latitudeNew) {
 					payload.CUSTOMER03 = latitudeNew.length > 20 ? latitudeNew.substring(0.20) : latitudeNew;
 					payload.CUSTOMER04 = longitudeNew.length > 20 ? longitudeNew.substring(0.20) : longitudeNew;
 				}
+				//Before this Odata call, try to update the flag of isProcessing: true before posting to the backend. Also update once you got a success or error response.
 				oDataModel.create("/TimeEventSet", payload, {
 					success: function (oData, oResponse) {
-						db.update({ _id: id, isSynced: false }, { $set: { isSynced: true, isPosted: false } },
+						db.update({ _id: id, isSynced: false }, { $set: { isSynced: true, isPosted: false, isProcessing: false } },
 							function (err, numReplaced) {
 								if (err) {
 									console.log("Error in Finding offline Records", err);
@@ -3225,18 +3085,91 @@ sap.ui.define([
 					},
 					error: function (err) {
 						that.byId("calendar").setBusy(false);
-						var oViewModel = new JSONModel({
-							networkStatus: "Offline"
-						});
-						that.getView().setModel(oViewModel, "networkStatusModel");
-						console.log(err);
+						db.update({ _id: id, isSynced: false }, { $set: { isSynced: false, isPosted: false, isProcessing: false } },
+							function (err, numReplaced) {
+								if (err) {
+									console.log("Error in Finding offline Records", err);
+									reject(err);
+								}
+								else {
+									that.hideBusy();
+									resolve();
+								}
+							});
+						console.log("Error in odata call", err);
 					}
 
 				});
 				//Posting to backend ends
+				// }
+				// })
 
 			})
 
+		},
+
+		/**
+		 * @description Function used to update the status of the records in the local database.
+		 * @param {Object} recordToUpdate - Updated Object received from the backend
+		 * @param {String} queryValue - Value of the Field which we are comparing in localdatabase to update
+		 * @param {String} queryField - Key of the Field with which we are comparing in the localdatabase to query, possible values are:- CUSTOMER05, CUSTOMER06
+		 */
+		updateRecordStatusInLocalDb: async function (recordToUpdate, queryValue, queryField) {
+			recordToUpdate.isSynced = true;
+			return new Promise((resolve, reject) => {
+				db.update({ module: 'TimeEventSetIndividual', [queryField]: queryValue }, { $set: recordToUpdate }, { upsert: true }, function (err, updatedRecord) {
+					if (err) {
+						console.log('Error in updating the record status in local db', err)
+						reject(err);
+					} else if (updatedRecord) {
+						console.log('Record Updated', updatedRecord)
+						resolve(updatedRecord)
+					}
+
+				})
+
+			})
+		},
+
+		/**
+		 * 
+		 * @deprecated :- Not in use, can be deleted.
+		 * @description Function to insert timeevent data into local database.
+		 * @param {Object} recordToInsert - TimeEvent Object to insert into the local database.
+		 */
+		insertRecordsInLocalDb: function (recordToInsert) {
+			return new Promise((resolve, reject) => {
+				db.insert(recordToInsert, function (err, docs) {
+					if (err) {
+						console.log('Error in inserting records into local db inside insertRecordsInLocalDb function', err, recordToInsert)
+						reject(err)
+					}
+					else if (docs) {
+						resolve(docs);
+					}
+				})
+			})
+
+		},
+
+		/**
+		 * 
+		 * @deprecated :- Not in use, can be deleted.
+		 * @description Function used to remove the record/records from the local database
+		 * @param {Object} record - Record to be deleted from the local database.
+		 */
+		removeRecordsFromLocalDb: async function (record) {
+			return new Promise((resolve, reject) => {
+				db.remove({ _id: record._id }, function (err, removedDoc) {
+					if (err) {
+						console.log('Error in removing the documents from the local database', err)
+						reject(err);
+					}
+					else if (removedDoc) {
+						resolve(removedDoc);
+					}
+				})
+			})
 		},
 
 		/**
@@ -3279,10 +3212,34 @@ sap.ui.define([
 						})
 					}
 				}).fail((error) => {
+					reject(error)
 					console.log('Error', error)
 				})
 			})
 
+		},
+
+		/**
+		 * @description Api Call to change the closeFlag status based on the parameter passed in the electron side.
+		 * @param {Boolean} closeFlag - True or false value which is used to determine the app close functionality
+		 * @returns 
+		 */
+		controlAppClose: function (closeFlag) {
+			return new Promise((resolve, reject) => {
+				$.ajax({
+					type: "POST",
+					url: "http://localhost:5858/change-value",
+					data: {
+						"closeFlag": closeFlag
+					},
+					dataType: "json"
+				}).done(function (response) {
+					resolve(response)
+				}).fail(function (error) {
+					reject(error);
+				})
+
+			})
 		},
 
 		/* =========================================================== */

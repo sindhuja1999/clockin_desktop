@@ -36,6 +36,8 @@ server.on('listening', onListening);
 const appName = app.getName();
 const getAppPath = path.join(app.getPath('appData'), appName);
 
+global.close = false;
+
 
 
 // console.log('getAppPath', getAppPath, 'appName', appName, 'appData', app.getPath('appData'))
@@ -65,6 +67,20 @@ async function showWindow() {
       }
     }, 600 * 1000)
 
+    electron.powerMonitor.on('lock-screen', () => { app.quit(); });
+
+    // if (electron.powerMonitor.getSystemIdleState(10) == 'idle') {
+    //   console.log('State idle');
+    //   app.quit()
+    // }
+    setInterval(() => {
+      let a = electron.powerMonitor.getSystemIdleTime()
+      if (a == 30 * 60 * 1000) {
+        console.log('Entering Idle State of the app, as the app is idle for 30 minutes.')
+        app.quit();
+      }
+    }, 600 * 1000)
+
   } catch (err) {
     log.error('Error in creating App window', err)
     createAuthWindow();
@@ -77,6 +93,8 @@ app.on('ready', showWindow);
 app.on('window-all-closed', () => {
   app.quit();
 });
+
+
 
 myapp.get('/electron', (req, res, next) => {
 
@@ -107,7 +125,8 @@ myapp.get('/electron', (req, res, next) => {
           res.json({
             accessToken: new Buffer(token).toString('base64'),
             refreshToken: new Buffer(refreshToken).toString('base64'),
-            osHostName
+            osHostName,
+            closeParameter: global.close
           })
           // res.send(data)
         }
@@ -127,6 +146,22 @@ myapp.get('/electron', (req, res, next) => {
     })
   })
 })
+
+
+//Service to change the global variable value for closing of the app.
+myapp.post('/change-value', (req, res, next) => {
+
+  console.log(req.body.closeFlag, typeof req.body.closeFlag)
+  global.close = req.body.closeFlag;
+  res.json({
+    statusCode: 1,
+    statusMessage: 'Updated',
+    data: global.close
+  })
+
+
+})
+
 // catch 404 and forward to error handler
 myapp.use(function (req, res, next) {
   next(createError(404));

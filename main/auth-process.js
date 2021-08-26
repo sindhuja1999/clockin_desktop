@@ -148,6 +148,15 @@ function createAuthWindow(authenticationService) {
     console.log("closing");
     win = null;
   });
+  // win.on('close', function (e) {
+  //   // The dialog box below will open, instead of your app closing.
+  //   e.preventDefault();
+  //   console.log('Close event Clicked in Auth Process')
+  //   dialog.showMessageBox({
+  //     message: "Close button has been pressed in Auth process!",
+  //     buttons: ["OK"]
+  //   });
+  // });
 }
 
 function destroyAuthWin() {
