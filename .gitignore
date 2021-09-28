@@ -48,3 +48,5 @@ Thumbs.db
 *.mov
 *.wmv
 
+# Env Variables
+env-variables.js
