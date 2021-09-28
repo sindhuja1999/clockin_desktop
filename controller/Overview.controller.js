@@ -1660,6 +1660,7 @@ sap.ui.define([
 
 			var f = [];
 			f.push(a);
+			let nonworkingrecords = [];
 			var oType = new sap.ui.model.odata.type.DateTime({ pattern: { style: 'long', UTC: 'false' } });
 			oType.formatValue(new Date(), 'string');
 			db.find({ module: "TimeEventSetIndividual", EventDate: date1 }, function (err, data) {
@@ -1680,39 +1681,57 @@ sap.ui.define([
 						case "SENT":
 							a.results[i].State = "Warning";
 							break;
+						case "HOLIDAY":
+							nonworkingrecords.push(i);
+							break;
+						case "NONWORKING":
+							nonworkingrecords.push(i);
+							break;
 					}
 
-					if (a.results[i].EventDate !== "" && a.results[i].EventDate !== null && a.results[i].EventDate !== undefined) {
-						if (a.results[i].EventDate !== 0) {
-							var nowdate = new Date(parseInt(a.results[i].EventDate.substr(6)));
-							a.results[i].EventDate = nowdate;
-							var t = a.results[i].EventTime;
-							let mins = t.substring(t.indexOf("H") + 1, t.indexOf("M"));
-							mins = mins <= 9 ? (0 + mins) : (mins)
-							let seconds = t.substring(t.indexOf("M") + 1, t.indexOf("S"));
-							seconds = seconds <= 9 ? (0 + seconds) : (seconds)
-							var t1 = t.substring(t.indexOf("T") + 1, t.indexOf("H")) + ':' + mins + ':' + seconds;
-							var hours = t1.substring(0, t1.indexOf(':'));
-							if (hours >= 12) {
-								if (hours == 12) {
-									t1 = hours + ':' + mins + ':' + seconds + " PM";
+
+					if (a.results.length) {
+						if (a.results[i].EventDate !== "" && a.results[i].EventDate !== null && a.results[i].EventDate !== undefined) {
+							if (a.results[i].EventDate !== 0) {
+								var nowdate = new Date(parseInt(a.results[i].EventDate.substr(6)));
+								a.results[i].EventDate = nowdate;
+								var t = a.results[i].EventTime;
+								let mins = t.substring(t.indexOf("H") + 1, t.indexOf("M"));
+								mins = mins <= 9 ? (0 + mins) : (mins)
+								let seconds = t.substring(t.indexOf("M") + 1, t.indexOf("S"));
+								seconds = seconds <= 9 ? (0 + seconds) : (seconds)
+								var t1 = t.substring(t.indexOf("T") + 1, t.indexOf("H")) + ':' + mins + ':' + seconds;
+								var hours = t1.substring(0, t1.indexOf(':'));
+								if (hours >= 12) {
+									if (hours == 12) {
+										t1 = hours + ':' + mins + ':' + seconds + " PM";
+									}
+									else {
+										t1 = hours - 12 + ':' + mins + ':' + seconds + " PM";
+									}
 								}
 								else {
-									t1 = hours - 12 + ':' + mins + ':' + seconds + " PM";
+									t1 = (t1.substring(0, t1.indexOf(":")) == '0' ? '12' : t1.substring(0, t1.indexOf(":"))) + t1.substring(t1.indexOf(":"), t1.length)
+									t1 = t1 + " AM";
 								}
+								a.results[i].EventTime = t1;
+								a.results[i].timerforsort = parseInt((hours * 60 * 60) + (mins * 60) + seconds)
+							} else {
+								// a.results[i].EventTime = "";
 							}
-							else {
-								t1 = (t1.substring(0, t1.indexOf(":")) == '0' ? '12' : t1.substring(0, t1.indexOf(":"))) + t1.substring(t1.indexOf(":"), t1.length)
-								t1 = t1 + " AM";
-							}
-							a.results[i].EventTime = t1;
-							a.results[i].timerforsort = parseInt((hours * 60 * 60) + (mins * 60) + seconds)
-						} else {
-							// a.results[i].EventTime = "";
 						}
+						a.results[i].type = "Inactive";
+					}//closing for loop
+					// else if(a.results.length ===0){
+					// 	a.results = []
+					// }
+					
+				}
+				if (nonworkingrecords) {
+					for (let j = nonworkingrecords.length - 1; j >= 0; j--) {
+						a.results.splice(nonworkingrecords[j], 1);
 					}
-					a.results[i].type = "Inactive";
-				}//closing for loop
+				}
 				a.results.sort((one, two) => {
 					return two.timerforsort - one.timerforsort
 				})
