@@ -68,24 +68,12 @@ module.exports = class AutenticationService {
 		this._keytar.getPassword(this._keytarService, this._accessTokenAccount).then(token => {
 			if (token) {
 				this._keytar.getPassword(this._keytarService, this._accessTokenExpiresAccount).then((expiry) => {
-					this.checkRevokedAccessToken(token).then(data => {
-						if (data === 'revoked') {
-							console.log('Revoked in getaccesstoken message', data)
-							log.error('Token Revoked, failed to allow to use the applcation')
-							callback(null)
-							this.deleteTokensFromKeyChain();
-						} else if (data === 'active') {
-							console.log('Token is not revoked and is active', data)
-							if (this._moment().isBefore(expiry, 'second')) {
-								callback(token);
-								this.increaseAccessTokenValidity(expiry, token)
-							} else {
-								this.getRefreshToken(callback);
-							}
-						}
-					}).catch((error) => {
-						log.error('Error in Checking Revoked Access Token', error)
-					})
+					if (this._moment().isBefore(expiry, 'second')) {
+                        callback(token);
+                        this.increaseAccessTokenValidity(expiry, token)
+                    } else {
+                        this.getRefreshToken(callback);
+                    }
 				});
 			} else {
 				console.log("token is null");
@@ -377,7 +365,8 @@ module.exports = class AutenticationService {
 				})
 				.catch((error) => {
 					log.error('Error in fetching employee details set data ', error)
-					reject(error)
+					// reject(error)
+					resolve('offline')
 				})
 		})
 	}
