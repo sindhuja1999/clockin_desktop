@@ -52,7 +52,7 @@ module.exports = async function (params) {
             appPath: appPath,
             ascProvider: 'N7T323633C',
             appleId: 'sut2008@med.cornell.edu',
-            appleIdPassword: 'kwfh-zglu-kuet-iymp',
+            appleIdPassword: 'onin-dxcd-lujc-vczf',
         });
     } catch (error) {
         console.error(error);
