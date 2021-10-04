@@ -60,9 +60,13 @@
     },
     "dmg": {
       "sign": false
-    }
+    },
+    "pkg": {
+      "overwriteAction": "update",
+      "scripts": "../build/pkg-scripts"
+    }  
   },
-  "author": "WCM<wcm@github.com>",
+  "author": "WCM<wcm@bitbucket.org>",
   "license": "ISC",
   "devDependencies": {
     "concurrently": "^5.2.0",
