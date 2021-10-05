@@ -1671,9 +1671,13 @@ sap.ui.define([
 					switch (a.results[i].Status) {
 						case "APPROVED":
 							a.results[i].State = "Success";
+							// a.results[i].Type = sap.ui.unified.CalendarDayType.Type08;
+							// a.results[i].Tooltip = that.oBundle.getText("approved");
 							break;
 						case "POSTED":
 							a.results[i].State = "Success";
+							// a.results[i].Type = sap.ui.unified.CalendarDayType.Type08;
+							// a.results[i].Tooltip = that.oBundle.getText("approved");
 							break;
 						case "REJECTED":
 							a.results[i].State = "Error";
@@ -1725,7 +1729,7 @@ sap.ui.define([
 					// else if(a.results.length ===0){
 					// 	a.results = []
 					// }
-					
+
 				}
 				if (nonworkingrecords) {
 					for (let j = nonworkingrecords.length - 1; j >= 0; j--) {
@@ -1779,6 +1783,10 @@ sap.ui.define([
 					text: this.oBundle.getText("sent"),
 					type: sap.ui.unified.CalendarDayType.Type00
 				}));
+				this.legend.addItem(new sap.ui.unified.CalendarLegendItem({
+					text: this.oBundle.getText("holiday"),
+					type: sap.ui.unified.CalendarDayType.Type09
+				}));
 			}
 			if (this.mlegend) {
 				this.mlegend.addItem(new sap.ui.unified.CalendarLegendItem({
@@ -1793,6 +1801,10 @@ sap.ui.define([
 					text: this.oBundle.getText("sent"),
 					type: sap.ui.unified.CalendarDayType.Type00
 				}));
+				this.mlegend.addItem(new sap.ui.unified.CalendarLegendItem({
+					text: this.oBundle.getText("holiday"),
+					type: sap.ui.unified.CalendarDayType.Type09
+				}));
 			}
 
 		},
@@ -1803,29 +1815,94 @@ sap.ui.define([
 		 */
 
 		initCalendar: function (Pernr) {
-			var that = this;
-			var f = [];
-			var a = new sap.ui.model.Filter({
-				path: "EmployeeID",
-				operator: sap.ui.model.FilterOperator.EQ,
-				value1: Pernr
-			});
-			var b = new sap.ui.model.Filter({
-				path: "DateFrom",
-				operator: sap.ui.model.FilterOperator.EQ,
-				value1: this.dateFrom
-			});
-			var c = new sap.ui.model.Filter({
-				path: "DateTo",
-				operator: sap.ui.model.FilterOperator.EQ,
-				value1: this.dateTo
-			});
-			f.push(a);
-			if (this.dateFrom && this.dateTo) {
-				f.push(b);
-				f.push(c);
-			}
+			// var that = this;
+			// var f = [];
+			// var a = new sap.ui.model.Filter({
+			// 	path: "EmployeeID",
+			// 	operator: sap.ui.model.FilterOperator.EQ,
+			// 	value1: Pernr
+			// });
+			// var b = new sap.ui.model.Filter({
+			// 	path: "DateFrom",
+			// 	operator: sap.ui.model.FilterOperator.EQ,
+			// 	value1: this.dateFrom
+			// });
+			// var c = new sap.ui.model.Filter({
+			// 	path: "DateTo",
+			// 	operator: sap.ui.model.FilterOperator.EQ,
+			// 	value1: this.dateTo
+			// });
+			// f.push(a);
+			// if (this.dateFrom && this.dateTo) {
+			// 	f.push(b);
+			// 	f.push(c);
+			// }
 
+			// Below code is standard and to be adjusted for non working day display
+			var that = this;
+			//Custom logic to 
+
+			console.log('Tool Tup', that.oBundle.getText("approved"), '==>', sap.ui.unified.CalendarDayType.Type08);
+			console.log('This.dateFrom', this.dateFrom, 'This.dateTo', this.dateTo, this.selectedDate)
+			console.log(new Date(Date.UTC(this.dateFrom.getFullYear(), this.dateFrom.getMonth(), this.dateFrom.getDate())).getTime(), 'var')
+			let d1 = '/Date(' + new Date(Date.UTC(this.dateFrom.getFullYear(), this.dateFrom.getMonth(), this.dateFrom.getDate())).getTime() + ')/';
+			let d2 = '/Date(' + new Date(Date.UTC(this.dateTo.getFullYear(), this.dateTo.getMonth(), this.dateTo.getDate())).getTime() + ')/';
+			// db.find({ module: 'TimeEventSetIndividual', EventDate: { $gte: d1, $lte: d2 } }, function (err, data) {
+				db.find({ module: 'TimeEventSetIndividual'}, function (err, data) {
+				if (err) {
+					console.log('Error', err);
+				} else if (data) {
+					console.log(data, 'Query Data')
+					let date;
+					for (var i = 0; i < data.length; i++) {
+						switch (data[i].Status) {
+							case "APPROVED":
+								data[i].Type = sap.ui.unified.CalendarDayType.Type08;
+								data[i].Tooltip = that.oBundle.getText("approved");
+								break;
+							case "POSTED":
+								data[i].Type = sap.ui.unified.CalendarDayType.Type08;
+								data[i].Tooltip = that.oBundle.getText("approved");
+								break;
+							case "REJECTED":
+								data[i].Type = sap.ui.unified.CalendarDayType.Type03;
+								data[i].Tooltip = that.oBundle.getText("rejected");
+								break;
+							case "SENT":
+								data[i].Type = sap.ui.unified.CalendarDayType.Type00;
+								data[i].Tooltip = that.oBundle.getText("sent");
+								break;
+							case "HOLIDAY":
+								data[i].Type = sap.ui.unified.CalendarDayType.Type09;
+								if (data[i].StatusText != "") {
+									data[i].Tooltip = data[i].StatusText;
+								} else {
+									data[i].Tooltip = that.oBundle.getText("holiday");
+								}
+								break;
+							case "NONWORKING":
+								data[i].Type = sap.ui.unified.CalendarDayType.NonWorking;
+								data[i].Tooltip = that.oBundle.getText("nonWorking");
+								break;
+						}
+						console.log(data[i].EventDate, 'EventDate')
+						var temp = data[i].EventDate;
+						temp = temp.substring(6, temp.length - 2);
+						that.calendar.addSpecialDate(new sap.ui.unified.DateTypeRange({
+							startDate: new Date(parseInt(temp)),
+							type: data[i].Type,
+							tooltip: data[i].Tooltip
+						}));
+						that.mCalendar.addSpecialDate(new sap.ui.unified.DateTypeRange({
+							startDate: new Date(parseInt(temp)),
+							type: data[i].Type,
+							tooltip: data[i].Tooltip
+						}));
+
+					}
+
+				}
+			})
 		},
 		/**
 		 * Called when application is busy in loading data.
