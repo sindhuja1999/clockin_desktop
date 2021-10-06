@@ -3447,6 +3447,12 @@ sap.ui.define([
 				}
 				return originText;
 			}
+		},
+		getNonworkingDays: function (oVal) {
+		  // if BusinessAreaId = MCQT	
+			return [5,6];
+		  // else if  	BusinessAreaId = MCNY
+		    // return [6,0];	
 		}
 	});
 
