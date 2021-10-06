@@ -206,7 +206,7 @@ sap.ui.define([
 
 			// var dataLoaded = this.oDataModel.metadataLoaded();
 			// dataLoaded.then(function (oData) { }).catch(function (oErr) { });
-			// this.initCalendarLegend();
+			this.initCalendarLegend();
 			// Handle validation
 			// sap.ui.getCore().attachParseError(controlErrorHandler);
 			// sap.ui.getCore().attachValidationSuccess(controlNoErrorHandler);
@@ -222,6 +222,20 @@ sap.ui.define([
 
 		onAfterRendering: function () {
 			this.busyDialog.close();
+			this.getNonworkingDays('');
+			var oServiceURI = this.getOwnerComponent().getMetadata().getManifestEntry("sap.app").dataSources["timeEventService"].uri;
+			this.oDataModel1 = new sap.ui.model.odata.v2.ODataModel({
+				serviceUrl: oServiceURI + '/odata/SAP/HCMFAB_MYTIMEEVENTS_SRV',
+				useBatch: false,
+				headers: {
+					Authorization: "Bearer " + localStorage.getItem('token'),
+					Accept: "*/*"
+				}
+			});
+			this.oDataModel1.attachEventOnce("requestCompleted", function (oEvent) {
+				console.log('oDataModel1 loaded', oEvent);
+
+			});
 		},
 
 
@@ -1771,36 +1785,36 @@ sap.ui.define([
 
 		initCalendarLegend: function () {
 			if (this.legend) {
-				this.legend.addItem(new sap.ui.unified.CalendarLegendItem({
-					text: this.oBundle.getText("approved"),
-					type: sap.ui.unified.CalendarDayType.Type08
-				}));
-				this.legend.addItem(new sap.ui.unified.CalendarLegendItem({
-					text: this.oBundle.getText("rejected"),
-					type: sap.ui.unified.CalendarDayType.Type03
-				}));
-				this.legend.addItem(new sap.ui.unified.CalendarLegendItem({
-					text: this.oBundle.getText("sent"),
-					type: sap.ui.unified.CalendarDayType.Type00
-				}));
+				// this.legend.addItem(new sap.ui.unified.CalendarLegendItem({
+				// 	text: this.oBundle.getText("approved"),
+				// 	type: sap.ui.unified.CalendarDayType.Type08
+				// }));
+				// this.legend.addItem(new sap.ui.unified.CalendarLegendItem({
+				// 	text: this.oBundle.getText("rejected"),
+				// 	type: sap.ui.unified.CalendarDayType.Type03
+				// }));
+				// this.legend.addItem(new sap.ui.unified.CalendarLegendItem({
+				// 	text: this.oBundle.getText("sent"),
+				// 	type: sap.ui.unified.CalendarDayType.Type00
+				// }));
 				this.legend.addItem(new sap.ui.unified.CalendarLegendItem({
 					text: this.oBundle.getText("holiday"),
 					type: sap.ui.unified.CalendarDayType.Type09
 				}));
 			}
 			if (this.mlegend) {
-				this.mlegend.addItem(new sap.ui.unified.CalendarLegendItem({
-					text: this.oBundle.getText("approved"),
-					type: sap.ui.unified.CalendarDayType.Type08
-				}));
-				this.mlegend.addItem(new sap.ui.unified.CalendarLegendItem({
-					text: this.oBundle.getText("rejected"),
-					type: sap.ui.unified.CalendarDayType.Type03
-				}));
-				this.mlegend.addItem(new sap.ui.unified.CalendarLegendItem({
-					text: this.oBundle.getText("sent"),
-					type: sap.ui.unified.CalendarDayType.Type00
-				}));
+				// this.mlegend.addItem(new sap.ui.unified.CalendarLegendItem({
+				// 	text: this.oBundle.getText("approved"),
+				// 	type: sap.ui.unified.CalendarDayType.Type08
+				// }));
+				// this.mlegend.addItem(new sap.ui.unified.CalendarLegendItem({
+				// 	text: this.oBundle.getText("rejected"),
+				// 	type: sap.ui.unified.CalendarDayType.Type03
+				// }));
+				// this.mlegend.addItem(new sap.ui.unified.CalendarLegendItem({
+				// 	text: this.oBundle.getText("sent"),
+				// 	type: sap.ui.unified.CalendarDayType.Type00
+				// }));
 				this.mlegend.addItem(new sap.ui.unified.CalendarLegendItem({
 					text: this.oBundle.getText("holiday"),
 					type: sap.ui.unified.CalendarDayType.Type09
@@ -1815,46 +1829,18 @@ sap.ui.define([
 		 */
 
 		initCalendar: function (Pernr) {
-			// var that = this;
-			// var f = [];
-			// var a = new sap.ui.model.Filter({
-			// 	path: "EmployeeID",
-			// 	operator: sap.ui.model.FilterOperator.EQ,
-			// 	value1: Pernr
-			// });
-			// var b = new sap.ui.model.Filter({
-			// 	path: "DateFrom",
-			// 	operator: sap.ui.model.FilterOperator.EQ,
-			// 	value1: this.dateFrom
-			// });
-			// var c = new sap.ui.model.Filter({
-			// 	path: "DateTo",
-			// 	operator: sap.ui.model.FilterOperator.EQ,
-			// 	value1: this.dateTo
-			// });
-			// f.push(a);
-			// if (this.dateFrom && this.dateTo) {
-			// 	f.push(b);
-			// 	f.push(c);
-			// }
-
 			// Below code is standard and to be adjusted for non working day display
 			var that = this;
-			//Custom logic to 
 
-			console.log('Tool Tup', that.oBundle.getText("approved"), '==>', sap.ui.unified.CalendarDayType.Type08);
-			console.log('This.dateFrom', this.dateFrom, 'This.dateTo', this.dateTo, this.selectedDate)
-			console.log(new Date(Date.UTC(this.dateFrom.getFullYear(), this.dateFrom.getMonth(), this.dateFrom.getDate())).getTime(), 'var')
-			let d1 = '/Date(' + new Date(Date.UTC(this.dateFrom.getFullYear(), this.dateFrom.getMonth(), this.dateFrom.getDate())).getTime() + ')/';
-			let d2 = '/Date(' + new Date(Date.UTC(this.dateTo.getFullYear(), this.dateTo.getMonth(), this.dateTo.getDate())).getTime() + ')/';
-			// db.find({ module: 'TimeEventSetIndividual', EventDate: { $gte: d1, $lte: d2 } }, function (err, data) {
-				db.find({ module: 'TimeEventSetIndividual'}, function (err, data) {
+			db.find({ module: 'TimeEventSetIndividual' }, function (err, data) {
 				if (err) {
 					console.log('Error', err);
 				} else if (data) {
-					console.log(data, 'Query Data')
-					let date;
 					for (var i = 0; i < data.length; i++) {
+						var temp = data[i].EventDate;
+						temp = parseInt(temp.substring(6, temp.length - 2));
+						temp = new Date(temp);
+						temp = new Date(temp.getUTCFullYear(), temp.getUTCMonth(), temp.getUTCDate())
 						switch (data[i].Status) {
 							case "APPROVED":
 								data[i].Type = sap.ui.unified.CalendarDayType.Type08;
@@ -1885,16 +1871,14 @@ sap.ui.define([
 								data[i].Tooltip = that.oBundle.getText("nonWorking");
 								break;
 						}
-						console.log(data[i].EventDate, 'EventDate')
-						var temp = data[i].EventDate;
-						temp = temp.substring(6, temp.length - 2);
+
 						that.calendar.addSpecialDate(new sap.ui.unified.DateTypeRange({
-							startDate: new Date(parseInt(temp)),
+							startDate: new Date(temp),
 							type: data[i].Type,
 							tooltip: data[i].Tooltip
 						}));
 						that.mCalendar.addSpecialDate(new sap.ui.unified.DateTypeRange({
-							startDate: new Date(parseInt(temp)),
+							startDate: new Date(temp),
 							type: data[i].Type,
 							tooltip: data[i].Tooltip
 						}));
@@ -2015,6 +1999,7 @@ sap.ui.define([
 			var latitude, longitude;
 			var that = this;
 			var date = new Date();
+			// console.log(this.oDataModel1.getServiceMetadata(), 'Check for Service Metadata load');
 			let query = { module: 'GeoCoordinates' }
 			//Querying local database for geocoordinates stored
 			db.findOne(query, function (err, data) {
@@ -2125,22 +2110,15 @@ sap.ui.define([
 									else if (numReplaced) {
 										console.log('Replacing of records with is isProcessing Flag is success===> true', numReplaced)
 										isProcessStarted = true;
-										var oDataModel = new sap.ui.model.odata.v2.ODataModel({
-											serviceUrl: oServiceURI + '/odata/SAP/HCMFAB_MYTIMEEVENTS_SRV',
-											useBatch: false,
-											headers: {
-												Authorization: "Bearer " + localStorage.getItem('token'),
-												Accept: "*/*"
-											}
-										});
-										console.log(oDataModel);
-										if (oDataModel.getServiceMetadata() === undefined) {
+
+										// console.log(that.oDataModel1);
+										if (that.oDataModel1.getServiceMetadata() === undefined) {
 											console.log('Service Offline or Metadata failed to load')
 											isProcessStarted = false;
 											that.controlAppClose(false);
-										} else if (oDataModel.getServiceMetadata()) {
+										} else if (that.oDataModel1.getServiceMetadata()) {
 											//
-											oDataModel.create("/TimeEventSet", payload, {
+											that.oDataModel1.create("/TimeEventSet", payload, {
 												success: async function (oData, oResponse) {
 													// await new Promise((resolve, reject) => {
 													//Updating the isProcessing Flag to indicate that the record is processed.
@@ -2717,7 +2695,7 @@ sap.ui.define([
 						isProcessStarted = true;
 						//App Close Prevented by passing the true flag from the api to the electron app.
 						await this.controlAppClose(isProcessStarted); // isProcessStarted value becomes true.
-						console.log('Control Flag status before starting', isProcessStarted, new Date().getTime())
+						// console.log('Control Flag status before starting', isProcessStarted, new Date().getTime())
 
 						let offlinerecordstoupdate = [], offlinerecordstopush = [];
 						let onlinerecords = await this.fetchOnlineRecordsUsingAjaxCall(firstDay, lastDay); //fetching the online records for the current day, both parameters are same
@@ -3000,7 +2978,7 @@ sap.ui.define([
 		 * @description - Function to fetch the backend available records using ajax call, it accepts two parameters and returns a result set. 
 		 */
 		fetchOnlineRecordsUsingAjaxCall: async function (fromDate, toDate) {
-			console.log('From Date', fromDate, 'TO Date', toDate)
+			// console.log('From Date', fromDate, 'TO Date', toDate)
 			let now = new Date(fromDate.getTime() - fromDate.getTimezoneOffset() * 60000).toISOString().replace('Z', '')
 			let then = new Date(toDate.getTime() - toDate.getTimezoneOffset() * 60000).toISOString().replace('Z', '')
 			let oServiceURI = this.getOwnerComponent().getMetadata().getManifestEntry("sap.app").dataSources["timeEventService"].uri;
@@ -3088,8 +3066,8 @@ sap.ui.define([
 			try {
 				let removedElements = await Promise.all(removeElementsArray);
 				let insertElements = await insertElementsInLocalDb(insertElementsArray);
-				console.log('Removed Elements', removedElements);
-				console.log('Inserted Elements', insertElements);
+				// console.log('Removed Elements', removedElements);
+				// console.log('Inserted Elements', insertElements);
 				// if (onlineRecords.length) {
 				that.getEvents(thirdDay);
 				// }
@@ -3449,10 +3427,22 @@ sap.ui.define([
 			}
 		},
 		getNonworkingDays: function (oVal) {
-		  // if BusinessAreaId = MCQT	
-			return [5,6];
-		  // else if  	BusinessAreaId = MCNY
-		    // return [6,0];	
+			var that = this;
+
+			db.findOne({ module: 'EmployeeDetailSet' }, function (err, data) {
+				// console.log(data.EmployeeDetailSet[0].BusinessAreaId);
+				if (err) {
+					console.log('Error', err)
+				} else if (data) {
+					if (data.EmployeeDetailSet[0].BusinessAreaId === 'MCQT') {
+						that.getView().byId('calendar').setNonWorkingDays([5, 6])
+					} else if (data.EmployeeDetailSet[0].BusinessAreaId === 'MCNY') {
+						that.getView().byId('calendar').setNonWorkingDays([6, 0])
+					}
+				}
+
+			});
+
 		}
 	});
 
