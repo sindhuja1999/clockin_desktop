@@ -32,8 +32,8 @@
         "portable",
         "appx"
       ],
-      "certificateSubjectName": "CN=Weill Cornell Medical College, OU=Information Technologies and Services, O=Weill Cornell Medical College, STREET=1300 York Avenue, L=New York, S=NY, PostalCode=10065, C=US",
-      "publisherName": "CN=Weill Cornell Medical College, OU=Information Technologies and Services, O=Weill Cornell Medical College, STREET=1300 York Avenue, L=New York, S=NY, PostalCode=10065, C=US",
+      "certificateSubjectName": "CN=Weill Cornell Medical College, OU=Information Technologies and Services, O=Weill Cornell Medical College, L=New York, S=New York, C=US",
+      "publisherName": "CN=Weill Cornell Medical College, OU=Information Technologies and Services, O=Weill Cornell Medical College, L=New York, S=New York, C=US",
       "signAndEditExecutable": true
     },
     "nsis": {
