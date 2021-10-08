@@ -11,7 +11,7 @@
         },
         "dataSources": {
             "timeEventService": {
-                "uri": "https://gwaas-g1c49ajwmr.us3.hana.ondemand.com",
+                "uri": "https://gwaas-b7mbepvdgi.us3.hana.ondemand.com",
                 "type": "OData",
                 "settings": {
                     "preload": false,
