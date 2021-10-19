@@ -1,7 +1,7 @@
 {
   "name": "ClockIn",
-  "version": "1.0.5",
-  "description": "Clock In Application which works both in online and offline mode",
+  "version": "1.0.8",
+  "description": "Clock In Application which works both in online and offline mode version 8",
   "main": "main.js",
   "scripts": {
     "startTest": "npm install && electron ./",
@@ -32,8 +32,8 @@
         "portable",
         "appx"
       ],
-      "certificateSubjectName": "CN=Weill Cornell Medical College, OU=Information Technologies and Services, O=Weill Cornell Medical College, STREET=1300 York Avenue, L=New York, S=NY, PostalCode=10065, C=US",
-      "publisherName": "CN=Weill Cornell Medical College, OU=Information Technologies and Services, O=Weill Cornell Medical College, STREET=1300 York Avenue, L=New York, S=NY, PostalCode=10065, C=US",
+      "certificateSubjectName": "CN=Weill Cornell Medical College, OU=Information Technologies and Services, O=Weill Cornell Medical College, L=New York, S=New York, C=US",
+      "publisherName": "CN=Weill Cornell Medical College, OU=Information Technologies and Services, O=Weill Cornell Medical College, L=New York, S=New York, C=US",
       "signAndEditExecutable": true
     },
     "nsis": {
@@ -41,6 +41,7 @@
       "guid": "+CLzPKrN7E+4IkxkqMUUzg==",
       "oneClick": true,
       "runAfterFinish": false,
+      "shortcutName": "Clock-In",
       "include": "build/installer.nsh"
     },
     "mac": {
@@ -54,14 +55,18 @@
       "gatekeeperAssess": false,
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist",
-      "provisioningProfile": "/Users/ranganathpavan/Downloads/timeevents/WBGMacOS.provisionprofile",
+      "provisioningProfile": "prov_profile/WBGMacOS.provisionprofile",
       "type": "distribution"
     },
     "dmg": {
       "sign": false
-    }
+    },
+    "pkg": {
+      "overwriteAction": "update",
+      "scripts": "../build/pkg-scripts"
+    }  
   },
-  "author": "WCM<wcm@github.com>",
+  "author": "WCM<wcm@bitbucket.org>",
   "license": "ISC",
   "devDependencies": {
     "concurrently": "^5.2.0",

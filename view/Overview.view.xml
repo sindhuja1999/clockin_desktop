@@ -18,9 +18,9 @@
 			<Text text="{userDetails>/FormattedName}"/>
 			<Text text="              "/>
 			<ToolbarSpacer />
-			<Text text="{networkStatusModel>/networkStatus}" class="a"/>
+			<!-- <Text text="{networkStatusModel>/networkStatus}" class="a"/> -->
 			<!-- <Text text="{window>/networkstatus}" class="a"/> -->
-			<Text text="Next sync in {syncModel>/syncTimer} seconds" class="sapUiSmallMarginEnd"/>
+			<!-- <Text text="Next sync in {syncModel>/syncTimer} seconds" class="sapUiSmallMarginEnd"/> -->
 			</tnt:ToolHeader>
 			<IconTabBar id="idIconTabBarNoIcons" expanded="{device>/isNoPhone}" class="sapUiResponsiveContentPadding" select="onSelect"
 				expandable="false">
@@ -155,7 +155,7 @@
 						<l:Grid hSpacing="0" defaultSpan="XL6 L7 M12 S12" class="sapUiSmallMargin">
 							<l:content>
 								<l:VerticalLayout>
-									<u:Calendar id="calendar" months="{= ${device>/system/desktop} ? 2 : 1}" visible="{= ${device>/system/phone} ? false : true}"
+									<u:Calendar id="calendar" nonWorkingDays="{path:'system',formatter:'.getNonworkingDays'}" months="{= ${device>/system/desktop} ? 2 : 1}" visible="{= ${device>/system/phone} ? false : true}"
 										select="handleCalendarSelect" startDateChange="onStartDateChange"/>
 									<u:CalendarLegend id="legend"/>
 								</l:VerticalLayout>
@@ -228,7 +228,8 @@
 				<!--<Button id="save" text="{i18n>save}" type="Emphasized" tooltip="{i18n>save}" visible="false" press="onSave"/>-->
 				<!--<Button id="cancel" text="{i18n>cancel}" visible="false" tooltip="{i18n>reset}" press="resetFields"/>-->
 				<!--<Button id="favorite" text="{i18n>eventTypes}" tooltip="{i18n>eventTypes}" press="onSaveFavorite"/>-->
-				<Button id="flush" text="Sync" visible="true" tooltip="Manual Sync" press="onFlushButton" class="sapUiSmallMarginEnd"/>
+				<!-- <Button id="flush" text="Sync" visible="true" tooltip="Manual Sync" press="onFlushButton" class="sapUiSmallMarginEnd"/> -->
+				<Button id="flush" text="Sync" visible="true" tooltip="Manual Sync" press="onFlushButton" enabled="{syncVisibility>/syncVisibleFlag}" class="sapUiSmallMarginEnd"/>
 				<!--<Button id="refresh" text="Refresh" tooltip="Refresh" visible="false" press="onRefreshButton"/>-->
 				<!--<Button id="messages" text="{i18n>messagesText}" tooltip="{i18n>messagesText}" press="onMessagesBtnClick" enabled="false" visible="false"/>-->
 				<!--<Button id="download" text="{i18n>downloadTime}" tooltip="{i18n>downloadTime}" press="showTimeStatementDialog"/>-->

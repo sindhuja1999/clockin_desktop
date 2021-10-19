@@ -1,12 +1,12 @@
 const fs = require('fs');
-// const db = require('../database/database')
 const db = require('../database/secure-database');
 const envVariables = require('../env-variables');
+const log = require('electron-log');
+
 module.exports = class AutenticationService {
 	constructor(keytar, moment, os, oAuthprovider, redirectUri, axios) {
 		this._keytar = keytar;
 		this._moment = moment;
-		// this._keytarService = 'electron-openid-oauth';
 		this._keytarService = 'timeevents';
 		this._oAuthprovider = oAuthprovider;
 		this._redirectUri = redirectUri;
@@ -29,33 +29,51 @@ module.exports = class AutenticationService {
 		return this._oAuthprovider.getLogOutUrl();
 	}
 
+	/**
+	 * 
+	 * @param {String} accessToken 
+	 * @description Function to store the access token in the keychain
+	 */
 	storeAccessToken(accessToken) {
 		console.log("Storing token value: ");
 		this._keytar.setPassword(this._keytarService, this._accessTokenAccount, accessToken);
 	}
 
-
+	/**
+	 * 
+	 * @param {String} refreshToken 
+	 * @description Function to store the refresh token in the keychain
+	 */
 	storeRefreshToken(refreshToken) {
 		console.log("Storing refresh token value: ");
 		this._keytar.setPassword(this._keytarService, this._refreshTokenAccount, refreshToken);
 	}
 
+	/**
+	 * 
+	 * @param {Date} expiresIn 
+	 * @description Function to store the expiry time of the access token in the keychain.
+	 */
 	storeAccessTokenExpiry(expiresIn) {
 		let expiry = this._moment().add(expiresIn, 'seconds');
 		console.log(" storing expiry: " + expiry.toISOString());
 		this._keytar.setPassword(this._keytarService, this._accessTokenExpiresAccount, expiry.toISOString());
 	}
 
+	/**
+	 * @param {callback} callback - A callback to run
+	 * @description Function to get the accesstoken from the keychain after checking whether the token is revoked or not and before the token gets expired.
+	 */
 	getAccessToken(callback) {
 		this._keytar.getPassword(this._keytarService, this._accessTokenAccount).then(token => {
 			if (token) {
 				this._keytar.getPassword(this._keytarService, this._accessTokenExpiresAccount).then((expiry) => {
 					if (this._moment().isBefore(expiry, 'second')) {
-						callback(token);
-						this.increaseAccessTokenValidity(expiry, token)
-					} else {
-						this.getRefreshToken(callback);
-					}
+                        callback(token);
+                        this.increaseAccessTokenValidity(expiry, token)
+                    } else {
+                        this.getRefreshToken(callback);
+                    }
 				});
 			} else {
 				console.log("token is null");
@@ -64,6 +82,11 @@ module.exports = class AutenticationService {
 		})
 	}
 
+	/**
+	 * 
+	 * @param {callback} callback 
+	 * @description Function to get the updated token using refresh token and store the updated token in the keychain.
+	 */
 	getRefreshToken(callback) {
 		this._keytar.getPassword(this._keytarService, this._refreshTokenAccount).then(refreshToken => {
 			this._oAuthprovider.refreshTokens(refreshToken, (accessToken, expiresIn) => {
@@ -77,6 +100,11 @@ module.exports = class AutenticationService {
 		});
 	}
 
+	/**
+	 * 
+	 * @param {String} code- Exchange code
+	 * @description Function to call the loadtokens method to get the accesstoken in exchange for exchange code.
+	 */
 	loadTokens(code) {
 		return new Promise((resolve, reject) => {
 			this._oAuthprovider.loadTokens(code, this._redirectUri, (accessToken, refreshToken, expiresIn) => {
@@ -90,12 +118,16 @@ module.exports = class AutenticationService {
 				(err) => {
 					error = err;
 					console.log("error");
+					log.error('Error in loading tokens', err)
 					logout();
 					reject(err);
 				});
 		});
 	}
 
+	/**
+	 * @description Function to call the logout method, implementation is not in place.
+	 */
 	logout() {
 		console.log("Logout Called from Web APp");
 	}
@@ -103,6 +135,11 @@ module.exports = class AutenticationService {
 
 	//Custom Code for Preventing another user to login to the system
 
+	/**
+	 * 
+	 * @param {String} accessToken 
+	 * @description Function to get the configuration set data of the employee using access token for the logged in users.
+	 */
 	getConfigurationSetData(accessToken) {
 		return new Promise((resolve, reject) => {
 			let hoptions = {
@@ -112,15 +149,11 @@ module.exports = class AutenticationService {
 			};
 			const { oDataEndPoint } = envVariables.wcm;
 			this._axios.get(oDataEndPoint + '/odata/sap/HCMFAB_MYTIMEEVENTS_SRV/ConfigurationSet', hoptions)
-			// this._axios.get('https://gwaas-b7mbepvdgi.us3.hana.ondemand.com/odata/sap/HCMFAB_MYTIMEEVENTS_SRV/ConfigurationSet', hoptions)
 				.then((configurationData) => {
 					let configurationDataArray = configurationData.data.d.results;
 					if (configurationDataArray.length) {
 						console.log('Configuration Data Employee Id', configurationDataArray[0].EmployeeID)
 						resolve(configurationDataArray[0].EmployeeID)
-						// this.storeEmployeeId(configurationDataArray[0].EmployeeID)
-						// this.storeEmployeeIdToLocalDb(configurationDataArray[0].EmployeeID)
-						// this.checkEmployeeIdTally(accessToken)
 					}
 					else if (configurationDataArray.length === 0) {
 						console.log('Configuration Data Array Records in else block', configurationDataArray)
@@ -128,7 +161,7 @@ module.exports = class AutenticationService {
 					}
 				})
 				.catch((error) => {
-					console.log('Error', error)
+					log.error('Error in getting the configuration set data using accesstoken', error)
 					reject(error)
 					// document.write(error.response.data.error.message.value)
 				})
@@ -136,11 +169,21 @@ module.exports = class AutenticationService {
 
 	}
 
+	/**
+	 * 
+	 * @param {String} employeeId 
+	 * @description Function to store the employee data into the keychain, not in use.
+	 */
 	storeEmployeeId(employeeId) {
 		console.log("Storing EmployeeId value: " + employeeId);
 		this._keytar.setPassword(this._keytarService, this._keytarAccount + 'EmployeeId', employeeId);
 	}
 
+	/**
+	 * 
+	 * @param {String} employeeId 
+	 * @description Function to store the employee data into the local nedb database.
+	 */
 	storeEmployeeIdToLocalDb(employeeId) {
 		let requestObj = {
 			module: 'Tokens',
@@ -149,13 +192,14 @@ module.exports = class AutenticationService {
 		}
 		db.findOne(requestObj, function (err, employeeData) {
 			if (err) {
-				console.log('Error in finding the request Object', err)
+				log.error('Error in fetching the employee data from the local nedb database from the Tokens Module', err)
 			} else if (employeeData) {
 				console.log(employeeData, 'Do nothing')
 			} else if (!employeeData) {
 				db.insert(requestObj, function (err, newDoc) {
 					if (err) {
 						console.log('Error in inserting a record into local database', err);
+						log.error('Error in inserting employeeId into tokens module in local database', err);
 					}
 					else if (newDoc) {
 						console.log(newDoc, 'Created')
@@ -165,6 +209,11 @@ module.exports = class AutenticationService {
 		})
 	}
 
+	/**
+	 * 
+	 * @param {String} token -Access Token
+	 * @description Function to check whether the user is a returning user or a new user by comparing the employee data present in the local database.
+	 */
 	checkEmployeeIdTally(token) {
 		return new Promise((resolve, reject) => {
 			let _this = this;
@@ -176,6 +225,7 @@ module.exports = class AutenticationService {
 				db.findOne(requestObj, function (err, employeeData) {
 					if (err) {
 						console.log('Error in finding the request Object', err)
+						log.error("Error in fetching the employee data in checkEmployeeIdTally function", err)
 					} else if (employeeData) {
 						console.log(employeeData, 'Inside nothing')
 						if (employeeData.value === employeeId) {
@@ -200,6 +250,7 @@ module.exports = class AutenticationService {
 						db.insert(requestObj, function (err, newDoc) {
 							if (err) {
 								console.log('Error in inserting a record into local database', err);
+								log.error('Error in inserting employeeId into local database inside checkEmployeeIdTally function', err)
 							}
 							else if (newDoc) {
 								console.log(newDoc, 'Created')
@@ -214,7 +265,7 @@ module.exports = class AutenticationService {
 				})
 
 			}).catch((error) => {
-				console.log('Error in Checking the Employee Id Response', error.response)
+				log.error('Error in checking the employee id response', error.response)
 				if (error.response && error.response.data.error.message.value) {
 					_this.deleteTokensFromKeyChain();
 					resolve({
@@ -231,18 +282,30 @@ module.exports = class AutenticationService {
 
 	}
 
+	/**
+	 * @description Function to delete the access token from the keychain.
+	 */
 	deleteAccessToken() {
 		this._keytar.deletePassword(this._keytarService, this._accessTokenAccount);
 	}
 
+	/**
+	 * @description Function to delete the Access Token Expiry from the keychain
+	 */
 	deleteAccessTokenExpiry() {
 		this._keytar.deletePassword(this._keytarService, this._accessTokenExpiresAccount);
 	}
 
+	/**
+	 * @description Function to delete the refresh token from the keychain
+	 */
 	deleteRefreshToken() {
 		this._keytar.deletePassword(this._keytarService, this._refreshTokenAccount);
 	}
 
+	/**
+	 * @description Function to delete all the timeevents related passwords present in the keychain
+	 */
 	deleteTokensFromKeyChain() {
 		this.deleteAccessToken();
 		this.deleteAccessTokenExpiry();
@@ -250,14 +313,17 @@ module.exports = class AutenticationService {
 
 	}
 
+	/**
+	 * 
+	 * @param {Date} expiry - Expiry Time
+	 * @param {String} token - Access Token
+	 * @description Function to increase the validity of the access token when the token is about to expiring.
+	 */
 	increaseAccessTokenValidity(expiry, token) {
 		let a = new Date();
-		console.log('Inside Increase Access Token Validity function', expiry, token)
-		console.log('Difference calculated', new Date(), '<===>', expiry, new Date(expiry) - a, typeof expiry, typeof a)
 		if ((new Date(expiry) - new Date()) < (9 * 1000 * 86400)) {
-			console.log('Inside if condition in increase Access TOken Validity')
 			this._keytar.getPassword(this._keytarService, this._refreshTokenAccount).then(refreshToken => {
-				console.log("calling refreshToken api for refreshToken:" + refreshToken);
+				log.info("Calling refreshtoken api for refreshtoken")
 				this._oAuthprovider.refreshTokens(refreshToken, (accessToken, expiresIn) => {
 					this.storeAccessToken(accessToken);
 					this.storeAccessTokenExpiry(expiresIn);
@@ -269,11 +335,41 @@ module.exports = class AutenticationService {
 			});
 		}
 		else {
-			console.log('Inside else condition in increase Access TOken Validity')
+			console.log('Inside else condition in increase Access Token Validity')
 		}
 
 	}
 
+	/**
+	 * 
+	 * @param {String} accessToken 
+	 * @description Function to check whether the access token has been revoked or not.
+	 * @returns {String}
+	 */
+	checkRevokedAccessToken(accessToken) {
+		return new Promise((resolve, reject) => {
+			let hoptions = {
+				headers: {
+					'Authorization': 'Bearer ' + accessToken,
+				}
+			};
+			const { oDataEndPoint } = envVariables.wcm;
+			this._axios.get(oDataEndPoint + '/odata/sap/HCMFAB_COMMON_SRV/EmployeeDetailSet?$format=json', hoptions)
+				.then((configurationData) => {
+					if (configurationData && configurationData.headers['content-type'] === 'text/html;charset=utf-8') {
+						resolve('revoked')
+					}
+					if (configurationData && configurationData.headers['content-type'] === 'application/json') {
+						resolve('active')
+					}
+				})
+				.catch((error) => {
+					log.error('Error in fetching employee details set data ', error)
+					// reject(error)
+					resolve('offline')
+				})
+		})
+	}
 }
 
 
