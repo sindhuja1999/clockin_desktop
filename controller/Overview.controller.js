@@ -44,7 +44,7 @@ sap.ui.define([
 	}
 	let syncclocktimer = 7200;
 	let isProcessStarted = false;
-	let nonSyncedRecordsToPost = []
+	let isBackGroundProcessActive = false;
 	return BaseController.extend("edu.weill.Timeevents.controller.Overview", {
 		/* =========================================================== */
 		/* controller hooks                                            */
@@ -150,6 +150,53 @@ sap.ui.define([
 			// this.selectedDate = curDate;
 			this.selectedDate = new Date();
 
+
+			//Polling Job Starts Here.
+
+
+			//The Actual Polling Function
+			this.poll = ({ fn, validate, interval, nxtFn, maxAttempts }) => {
+				// this.poll = ({ fn, validate, interval, nxtFn, maxAttempts, payload, id }) => {
+				console.log('Poll Started ..');
+				let attempts = 0;
+				const executePoll = async (resolve, reject) => {
+					console.log('Execute- poll');
+					const result = await fn();
+					console.log('No of Attempts', attempts, 'Maximum no of attempts', maxAttempts);
+					attempts++;
+					if (validate(result)) {
+						let myresult = await nxtFn();
+						// let myresult = await nxtFn(payload, id);
+						return resolve(myresult);
+					} else if (maxAttempts && attempts === maxAttempts) {
+						return reject(new Error('Exceeded max attempts'));
+					} else {
+						setTimeout(executePoll, interval, resolve, reject);
+					}
+				};
+
+				return new Promise(executePoll);
+			};
+
+			//Validate the response check of the background process.
+			this.validatebackGroundProcessResponse = (response) => {
+				console.log(response, 'Inside validatebackGroundProcessResponse function', new Date().getTime())
+				return !response;
+			};
+
+			//Check whether the background process is in active/inactive state.
+			this.backGroundProcessCheck = async () => {
+				console.log('Inside backGroundProcessCheck function', new Date().getTime())
+				let resp = await new Promise(resolve => {
+					resolve(isProcessStarted);
+					// resolve(isBackGroundProcessActive);
+				});
+				console.log('Inside backGroundProcessCheck after await function', new Date().getTime())
+				return resp;
+			}
+
+			//Polling Job Ends Here.
+
 			// Fetch current date events from local DB
 			new Promise(
 				function (fnResolve, fnReject) {
@@ -157,7 +204,14 @@ sap.ui.define([
 					fnResolve(that.getEvents(new Date()));
 					fnReject();
 				}
-			).then(that.initCalendar(that.empID)).then(that.syncOfflineRecordsToBackendForCurrentDay(new Date(), new Date(), new Date(), true)) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
+			).then(that.initCalendar(that.empID)).then(() => {
+				setTimeout(() => {
+					isBackGroundProcessActive = true;
+					console.log('isBackGroundProcessActive  made true', new Date(), new Date().getTime())
+					that.syncOfflineRecordsToBackendForCurrentDay(new Date(), new Date(), new Date(), true)
+				}, 7000)
+			}) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
+			// ).then(that.initCalendar(that.empID)).then(that.syncOfflineRecordsToBackendForCurrentDay(new Date(), new Date(), new Date(), true)) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
 
 			var date = new Date();
 			var selectedTab;
@@ -210,6 +264,9 @@ sap.ui.define([
 			// Handle validation
 			// sap.ui.getCore().attachParseError(controlErrorHandler);
 			// sap.ui.getCore().attachValidationSuccess(controlNoErrorHandler);
+
+
+
 
 		},
 		/**
@@ -1680,7 +1737,6 @@ sap.ui.define([
 			db.find({ module: "TimeEventSetIndividual", EventDate: date1 }, function (err, data) {
 				var oModel = new sap.ui.model.json.JSONModel();
 				a.results = data;
-
 				for (var i = 0; i < a.results.length; i++) {
 					switch (a.results[i].Status) {
 						case "APPROVED":
@@ -1989,6 +2045,7 @@ sap.ui.define([
 			return result;
 		},
 
+
 		/**
 		 * Called when user create time event.
 		 * @public
@@ -2109,7 +2166,7 @@ sap.ui.define([
 									}
 									else if (numReplaced) {
 										console.log('Replacing of records with is isProcessing Flag is success===> true', numReplaced)
-										isProcessStarted = true;
+										// isProcessStarted = true;
 
 										// console.log(that.oDataModel1);
 										if (that.oDataModel1.getServiceMetadata() === undefined) {
@@ -2117,6 +2174,7 @@ sap.ui.define([
 											isProcessStarted = false;
 											that.controlAppClose(false);
 										} else if (that.oDataModel1.getServiceMetadata()) {
+											console.log('oDataModel Loaded check', that.oDataModel1.getServiceMetadata())
 											//
 											that.oDataModel1.create("/TimeEventSet", payload, {
 												success: async function (oData, oResponse) {
@@ -2151,8 +2209,59 @@ sap.ui.define([
 									}
 								})
 							} else if (isProcessStarted && navigator.onLine) {
-								nonSyncedRecordsToPost.push(payload);
-								await that.controlAppClose(false);
+								//Poll process starts here
+								const poll_interval = 1000;
+								const maxAttempts = 8;
+
+								const postTimeEvent = async () => {
+									return new Promise((resolve, reject) => {
+										that.oDataModel1.create("/TimeEventSet", payload, {
+											success: async function (oData, oResponse) {
+												// await new Promise((resolve, reject) => {
+												//Updating the isProcessing Flag to indicate that the record is processed.
+												isProcessStarted = false;
+												await that.controlAppClose(false); //Release the closing of app 
+												db.update({ _id: id, isSynced: false }, { $set: { isSynced: true, isPosted: false, isProcessing: false } }, function (err, numReplaced) {
+													resolve();
+													console.log('Replacing of records with is isProcessing Flag is success inside success callback===> false', numReplaced)
+													if (err) {
+														console.log("Error in Finding offline Records", err);
+													}
+												});
+												// })
+											},
+											error: async function (err) {
+												console.log('Error in oData post Call', err);
+												isProcessStarted = false;
+												await that.controlAppClose(false); //Release the closing of app 
+												//Updating the isProcessing Flag to indicate that the record is processed.
+												db.update({ _id: id, isSynced: false }, { $set: { isProcessing: false } },
+													function (err, numReplaced) {
+														if (err) {
+															console.log("Error in Finding offline Records", err);
+														}
+													});
+											}
+
+										});
+
+									})
+
+								}
+
+								//Posting the data based on the polling status update.
+								const pollforDataUpload = that.poll({
+									fn: that.backGroundProcessCheck,
+									validate: that.validatebackGroundProcessResponse,
+									interval: poll_interval,
+									// nxtFn: that.postTimeEvent,
+									nxtFn: postTimeEvent,
+									maxAttempts: maxAttempts
+									// payload: payload,
+									// id: id
+								}).then(data => console.log(data))
+									.catch(err => console.error(err));
+								//Poll process ends here.
 							} else if (!navigator.onLine) {
 								await that.controlAppClose(false); //Release the closing of app 
 								console.log('Display the message that the system cannot process your records as it is offline currently, will process once it is online(This will be done in UI5 app)')
@@ -2760,6 +2869,7 @@ sap.ui.define([
 				}
 			}
 			else if (!navigator.onLine) {
+				isBackGroundProcessActive = false;
 				console.log('System is in offline mode')
 			}
 
@@ -2799,7 +2909,6 @@ sap.ui.define([
 
 						// offlinerecordstopush = offlineRecordsForParticularDay.filter(o1 => !onlinerecords.some(o2 => (o2.TerminalId && o1.TerminalId == o2.TerminalId)))
 						offlinerecordstopush = offlineRecordsForParticularDay.filter(o1 => !onlinerecords.some(o2 => (o2.CUSTOMER06 && o1.CUSTOMER06 == o2.CUSTOMER06)))
-
 						let postOfflineRecordsArray = [];
 						if (offlinerecordstopush) {
 							for (let record of offlinerecordstopush) {
@@ -2951,7 +3060,11 @@ sap.ui.define([
 		 * @description Function to get the oldest offline records available, along with the oldest date of the records.
 		 */
 		getOldestOfflineRecords: async function () {
-			let query = { module: 'TimeEventSetIndividual', isSynced: false }
+			let fromDate = new Date();
+			fromDate.setDate(fromDate.getDate() - 1);
+			let newDate = new Date(Date.UTC(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate())).getTime();
+			let previousDate = '/Date(' + newDate + ')/';
+			let query = { module: 'TimeEventSetIndividual', isSynced: false, EventDate: { $lte: previousDate } }
 			return new Promise((resolve, reject) => {
 				db.find(query).sort({ "EventDate": 1 }).exec(function (err, docs) {
 					if (err) {
@@ -3066,6 +3179,8 @@ sap.ui.define([
 			try {
 				let removedElements = await Promise.all(removeElementsArray);
 				let insertElements = await insertElementsInLocalDb(insertElementsArray);
+				console.log('isBackGroundProcessActive  made false', new Date(), new Date().getTime())
+				isBackGroundProcessActive = false;
 				// console.log('Removed Elements', removedElements);
 				// console.log('Inserted Elements', insertElements);
 				// if (onlineRecords.length) {
@@ -3076,28 +3191,6 @@ sap.ui.define([
 				if (oldRecordsSyncFlag) {
 					that.syncOldestOfflineRecords();
 				}
-				let handleNonSyncedRecordsToPostArray = [];
-				//If there are non synced records to post, we will attempt to post them
-				if (nonSyncedRecordsToPost.length) {
-					let geodata = await this.getGeoCoordinates();
-					nonSyncedRecordsToPost.map((record) => {
-						handleNonSyncedRecordsToPostArray.push(that.postOfflineRecordsToBackend(record, geodata))
-					})
-					isProcessStarted = true;
-					await that.controlAppClose(isProcessStarted);
-					await Promise.all(handleNonSyncedRecordsToPostArray);
-					nonSyncedRecordsToPost = []
-					isProcessStarted = false;
-					await that.controlAppClose(isProcessStarted); // isProcessStarted value becomes false.
-					console.log('Control Flag status after posting nonSyncedRecordsToPost records ', isProcessStarted, new Date().getTime())
-					that.byId('calendar').setBusy(false);
-				}
-				// else if (nonSyncedRecordsToPost.length === 0) {
-				// 	isProcessStarted = false;
-				// 	await this.controlAppClose(isProcessStarted); // isProcessStarted value becomes false.
-				// 	console.log('Control Flag status after done', isProcessStarted, new Date().getTime())
-
-				// }
 				that.byId('calendar').setBusy(false);
 			} catch (error) {
 				console.log('Error in replacing the records')
