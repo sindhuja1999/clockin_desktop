@@ -94,11 +94,11 @@ function createAppWindow() {
         {
           label: 'Support Log',
           click: async () => {
-            // console.log('logfile',app.getPath('logs'))
+            const path = require('path');
             const shell = require('electron').shell
-            shell.openPath(path.join(app.getPath('logs'),'/main.log'))
+            shell.openPath(path.join(app.getPath('logs'), 'main.log'))
           }
-        },        
+        },
         {
           label: 'About',
           role: 'about'

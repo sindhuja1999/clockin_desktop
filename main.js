@@ -36,6 +36,10 @@ server.on('listening', onListening);
 const appName = app.getName();
 const getAppPath = path.join(app.getPath('appData'), appName);
 
+log.transports.file.resolvePath = (variables) => {  
+  return path.join(variables.electronDefaultDir, variables.fileName);
+}
+
 global.close = false;
 
 
