@@ -167,7 +167,7 @@ myapp.post('/change-value', (req, res, next) => {
 
 //Service to post log file.
 myapp.post('/logmsg', (req, res, next) => {
-  log.info(req.body.logmsg)
+  log[req.body.logType](req.body.logmsg);
   res.json({
     statusCode: 1,
     statusMessage: 'Updated'
