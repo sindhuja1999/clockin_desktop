@@ -65,6 +65,7 @@ sap.ui.define([
 		 * @public
 		 */
 		onInit: function () {
+			this.logMainMsg('Initializing');
 			var that = this;
 			let query = { module: 'EmployeeDetailSet' }
 			//Querying the local database for fetching the employee details
@@ -221,9 +222,7 @@ sap.ui.define([
 			// sap.ui.getCore().attachParseError(controlErrorHandler);
 			// sap.ui.getCore().attachValidationSuccess(controlNoErrorHandler);
 
-
-
-
+			this.logMainMsg('Initializing Complete');
 		},
 		/**
 		 * Called when the Overview controller on exit.
@@ -234,6 +233,7 @@ sap.ui.define([
 		},
 
 		onAfterRendering: function () {
+			this.logMainMsg('onAfterRendering');
 			this.busyDialog.close();
 			this.getNonworkingDays('');
 			var oServiceURI = this.getOwnerComponent().getMetadata().getManifestEntry("sap.app").dataSources["timeEventService"].uri;
@@ -249,6 +249,7 @@ sap.ui.define([
 				console.log('oDataModel1 loaded', oEvent);
 
 			});
+			this.logMainMsg('onAfterRendering Complete');
 		},
 
 
@@ -3426,6 +3427,17 @@ sap.ui.define([
 					reject(error);
 				})
 
+			})
+		},
+
+		logMainMsg: function(logmsg) {
+			$.ajax({
+				type: "POST",
+				url: "http://localhost:5858/logmsg",
+				data: {
+					"logmsg": logmsg
+				},
+				dataType: "json"
 			})
 		},
 
