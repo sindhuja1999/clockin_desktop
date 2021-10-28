@@ -91,12 +91,14 @@ function createAppWindow() {
             shell.openExternal('https://helpfiles.med.cornell.edu/gm/PerformSearch?SO=rel&format=EU_SearchXML.shtml&mode=EU&illegals=&O1=any&MH=2000&visibletext=timeevents-Display&P1=timeevents%5C-Display')
           }
         },
-        // {
-        //   label: 'Log',
-        //   click: async () => {
-        //     console.log('logfile',log.transports.file.getFile)
-        //   }
-        // },        
+        {
+          label: 'Support Log',
+          click: async () => {
+            // console.log('logfile',app.getPath('logs'))
+            const shell = require('electron').shell
+            shell.openPath(path.join(app.getPath('logs'),'/main.log'))
+          }
+        },        
         {
           label: 'About',
           role: 'about'
