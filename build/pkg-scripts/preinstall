@@ -1,3 +1,34 @@
 #!/bin/bash
+#ps_res=`ps -e | grep -i clockin | grep -v "grep"`
+app_ver_current="1.0.8"
+app_ver=""
+app_id=""
+# echo "file check" 
+if [ -a /Applications/ClockIn.app ]; then
+# if [ -f /Applications/ClockIn.app/Contents/Info ]; then
+    echo "in app content"
+    app_ver=`defaults read /Applications/ClockIn.app/Contents/Info CFBundleVersion`
+    app_id=`defaults read /Applications/ClockIn.app/Contents/Info CFBundleIdentifier`
+    echo "$app_ver"
+    echo "$app_id"
 
-osascript -e 'quit app "ClockIn"'
+fi    
+if [ -z "$app_ver" ]; then
+    echo "No version available"    
+else
+    if [ $app_ver \< $app_ver_current ]; then
+        echo "found app with version $app_ver. Updating app.."
+        #if [[ -n "`ps -ef | grep -i clockin | grep -v grep`" ]]; then
+        if [[ -n "`pgrep ClockIn`" ]]; then     
+            echo "stop running app."  
+            killall ClockIn
+        fi
+    else
+        echo "app is up to date"
+        if [[ -n "`pgrep ClockIn`" ]]; then     
+            echo "stop running app."  
+            killall ClockIn
+        fi
+        exit 0    
+    fi
+fi    
