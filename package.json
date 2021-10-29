@@ -62,7 +62,8 @@
       "sign": false
     },
     "pkg": {
-      "overwriteAction": "update",
+      "overwriteAction": "upgrade",
+      "isVersionChecked": true,
       "scripts": "../build/pkg-scripts"
     }
   },
@@ -71,7 +72,7 @@
   "devDependencies": {
     "concurrently": "^6.3.0",
     "electron": "^15.3.0",
-    "electron-builder": "^22.8.0",
+    "electron-builder": "^22.13.1",
     "electron-notarize": "^1.0.0",
     "electron-packager": "^15.4.0",
     "electron-rebuild": "^3.2.3"
@@ -85,11 +86,13 @@
     "express": "^4.17.1",
     "jsonwebtoken": "^8.5.1",
     "jwt-decode": "^2.2.0",
-    "keytar": "^6.0.1",
+    "keytar": "^7.7.0",
     "moment": "^2.24.0",
     "moment-timezone": "^0.5.28",
     "nedb": "^1.8.0",
+    "node": "^17.0.1",
     "odata": "^1.1.0",
+    "prebuild-install": "^5.3.6",
     "punycode": "^2.1.1"
   }
 }
