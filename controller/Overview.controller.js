@@ -2197,9 +2197,9 @@ sap.ui.define([
 								})
 								// } else if (isProcessStarted && navigator.onLine) {
 							} else if (isBackGroundProcessActive && navigator.onLine) {
-								//Poll process starts here
+								//Poll process starts here for every two secnods and 30 retries
 								const poll_interval = 2000;
-								const maxAttempts = 8;
+								const maxAttempts = 30;
 
 								const postTimeEvent = async () => {
 									return new Promise((resolve, reject) => {
