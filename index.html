@@ -36,7 +36,7 @@
    </script>
    <script>
       document.querySelector("body").style.visibility = "hidden";
-      document.querySelector("#loader").style.visibility = "visible"; 
+      document.querySelector("#loader").style.visibility = "visible";
    </script>
 
    <script id="sap-ui-bootstrap" src="./resources/sap-ui-core.js" , data-sap-ui-theme="wcmfioribelize"
@@ -236,8 +236,31 @@
             })
          });
 
+
+         //Promise to read the non synced records for current day.
+         const readNonSyncedRecords = new Promise((resolve, reject) => {
+            let query = {};
+            let filtercondition1 = new Date();
+            let newDate = new Date(Date.UTC(filtercondition1.getFullYear(), filtercondition1.getMonth(), filtercondition1.getDate()));
+            let filteredDate = '/Date(' + newDate.getTime() + ')/';
+            query = { module: 'TimeEventSetIndividual', isSynced: false, EventDate: filteredDate }
+            db.find(query, function (err, docs) {
+               if (err) {
+                  console.log('Error in finding TimeEventSetIndividual', err);
+                  reject(err)
+               }
+               else if (docs) {
+                  localStorage.setItem('nonsyncedrecords', JSON.stringify(docs));
+                  resolve(docs);
+               }
+            })
+
+
+         })
+
          Promise.all([configurationSet, timeEventSet, employeeDetailsSet]).then((values) => {
             timeEventTypeSet.then((value) => {
+               readNonSyncedRecords.then(() => console.log('fetched')).catch((error) => console.log('Error:-', error))
                // mysync()
                // getCoordinate()
             }).catch((error) => {
