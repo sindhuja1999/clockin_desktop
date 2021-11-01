@@ -36,6 +36,10 @@ server.on('listening', onListening);
 const appName = app.getName();
 const getAppPath = path.join(app.getPath('appData'), appName);
 
+log.transports.file.resolvePath = (variables) => {  
+  return path.join(variables.electronDefaultDir, variables.fileName);
+}
+
 global.close = false;
 
 
@@ -93,6 +97,11 @@ app.on('window-all-closed', () => {
   app.quit();
 });
 
+app.setAboutPanelOptions({
+  applicationName: app.getName(),
+  applicationVersion: app.getVersion(),
+  iconPath: path.join(__dirname, '/assets/icons/icon-1024.png')
+})
 
 
 myapp.get('/electron', (req, res, next) => {
@@ -105,6 +114,7 @@ myapp.get('/electron', (req, res, next) => {
   let service = 'timeevents';
   keytar.getPassword(service, accessTokenExpiresAccount).then((expiryTime) => {
     console.log('Expiry Time of the token', expiryTime)
+    log.info('Expiry Time of the token', expiryTime)
   })
   keytar.getPassword(service, accessTokenAccount).then((token) => {
     keytar.getPassword(service, refreshTokenAccount).then((refreshToken) => {
@@ -157,6 +167,15 @@ myapp.post('/change-value', (req, res, next) => {
   })
 
 
+})
+
+//Service to post log file.
+myapp.post('/logmsg', (req, res, next) => {
+  log[req.body.logType](req.body.logmsg);
+  res.json({
+    statusCode: 1,
+    statusMessage: 'Updated'
+  })
 })
 
 // catch 404 and forward to error handler
