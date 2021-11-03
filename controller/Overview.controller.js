@@ -1699,7 +1699,7 @@ sap.ui.define([
 			oType.formatValue(new Date(), 'string');
 			db.find({ module: "TimeEventSetIndividual", EventDate: date1 }, function (err, data) {
 				if (err) {
-					this.logMainMsg('Error in fetching timeevents in getEvents' + err, 'error');
+					that.logMainMsg('Error in fetching timeevents in getEvents' + err, 'error');
 				}
 				else if (data) {
 					var oModel = new sap.ui.model.json.JSONModel();
@@ -2045,7 +2045,7 @@ sap.ui.define([
 			//Querying local database for geocoordinates stored
 			db.findOne(query, function (err, data) {
 				if (err) {
-					this.logMainMsg('Error in identifying the geocoordinates in createTimeEventMob Function' + err, 'error');
+					that.logMainMsg('Error in identifying the geocoordinates in createTimeEventMob Function' + err, 'error');
 				} else if (data) {
 					latitude = data.latitude;
 					longitude = data.longitude;
@@ -2125,7 +2125,7 @@ sap.ui.define([
 					//Inserting the timeevents set records as offline initially and update the status when the record is posted to backend.
 					db.insert({ module: 'TimeEventSetIndividual', isSynced: false, isPosted: false, ...obj }, async function (err, entities) {
 						if (err) {
-							this.logMainMsg('Inserting the timeevents in createTimeEventMob Function error:-' + err, 'error');
+							that.logMainMsg('Inserting the timeevents in createTimeEventMob Function error:-' + err, 'error');
 						} else if (entities) {
 							that.busyDialog.close();
 							//Online record creation attempt
@@ -2147,13 +2147,13 @@ sap.ui.define([
 								//Adding isProcessing Flag to indicate that the record is being in the process of syncing to backend.
 								db.update({ _id: id }, { $set: { isProcessing: true } }, function (err, numReplaced) {
 									if (err) {
-										this.logMainMsg('Updating the timeevents isProcessing Flag  error:-' + err, 'error');
+										that.logMainMsg('Updating the timeevents isProcessing Flag  error:-' + err, 'error');
 									}
 									else if (numReplaced) {
 										// isProcessStarted = true;
 
 										if (that.oDataModel1.getServiceMetadata() === undefined) {
-											this.logMainMsg('Service Offline or Metadata failed to load', 'info');
+											that.logMainMsg('Service Offline or Metadata failed to load', 'info');
 											isProcessStarted = false;
 											that.controlAppClose(false);
 										} else if (that.oDataModel1.getServiceMetadata()) {
@@ -2165,7 +2165,7 @@ sap.ui.define([
 													await that.controlAppClose(false); //Release the closing of app 
 													db.update({ _id: id, isSynced: false }, { $set: { isSynced: true, isPosted: false, isProcessing: false } }, function (err, numReplaced) {
 														if (err) {
-															this.logMainMsg('Error in updating the isProcessing flag for synced records:-' + err, 'error');
+															that.logMainMsg('Error in updating the isProcessing flag for synced records:-' + err, 'error');
 														}
 													});
 													// })
@@ -2177,7 +2177,7 @@ sap.ui.define([
 													db.update({ _id: id, isSynced: false }, { $set: { isProcessing: false } },
 														function (err, numReplaced) {
 															if (err) {
-																this.logMainMsg('Error in updating the isProcessing flag for synced records in error block:-' + err, 'error');
+																that.logMainMsg('Error in updating the isProcessing flag for synced records in error block:-' + err, 'error');
 															}
 														});
 												}
@@ -2204,7 +2204,7 @@ sap.ui.define([
 												db.update({ _id: id, isSynced: false }, { $set: { isSynced: true, isPosted: false, isProcessing: false } }, function (err, numReplaced) {
 													resolve();
 													if (err) {
-														this.logMainMsg('Error in updating the isProcessing flag for synced records in polling success block:-' + err, 'error');
+														that.logMainMsg('Error in updating the isProcessing flag for synced records in polling success block:-' + err, 'error');
 													}
 												});
 												// })
@@ -2216,7 +2216,7 @@ sap.ui.define([
 												db.update({ _id: id, isSynced: false }, { $set: { isProcessing: false } },
 													function (err, numReplaced) {
 														if (err) {
-															this.logMainMsg('Error in updating the isProcessing flag for synced records in polling error block:-' + err, 'error');
+															that.logMainMsg('Error in updating the isProcessing flag for synced records in polling error block:-' + err, 'error');
 														}
 													});
 											}
@@ -2229,7 +2229,7 @@ sap.ui.define([
 
 								//poll function that executes until the response is valid & then triggers resolving of the promise function passed as parameter
 								const poll = ({ fn, validate, interval, nxtFn, maxAttempts }) => {
-									this.logMainMsg('Poll function started ..', 'info');
+									that.logMainMsg('Poll function started ..', 'info');
 									let attempts = 0;
 									const executePoll = async (resolve, reject) => {
 										console.log('Execute- poll');
@@ -2275,11 +2275,12 @@ sap.ui.define([
 									nxtFn: postTimeEvent,
 									maxAttempts: maxAttempts
 								}).then(data => console.log(data))
-									.catch(err => this.logMainMsg('Error in poll Function' + err, 'error'));
+									.catch(err => that.logMainMsg('Error in poll Function' + err, 'error'));
 								//New Poll Process Ends.
 							} else if (!navigator.onLine) {
+								isProcessStarted = false;
 								await that.controlAppClose(false); //Release the closing of app 
-								this.logMainMsg('System is offline, will process the records once it is online ..', 'info');								
+								that.logMainMsg('System is offline, will process the records once it is online ..', 'info');								
 							}
 
 							// }
@@ -2893,6 +2894,8 @@ sap.ui.define([
 			}
 			else if (!navigator.onLine) {
 				isBackGroundProcessActive = false;
+				isProcessStarted = false;
+				await this.controlAppClose(isProcessStarted);
 				this.logMainMsg('isBackGroundProcessActive made false, System is in offline mode', 'info');
 			}
 			this.logMainMsg('syncOfflineRecordsToBackendForCurrentDay function complete', 'info');
@@ -3211,7 +3214,7 @@ sap.ui.define([
 				that.byId('calendar').setBusy(false);
 			} catch (error) {
 				isBackGroundProcessActive = false;
-				this.logMainMsg('isBackGroundProcessActive made false, Error in replacing the records' + error, 'error');
+				that.logMainMsg('isBackGroundProcessActive made false, Error in replacing the records' + error, 'error');
 			}
 
 			// Avoiding API Call ends
@@ -3260,7 +3263,7 @@ sap.ui.define([
 						db.update({ _id: id, isSynced: false }, { $set: { isSynced: true, isPosted: false, isProcessing: false } },
 							function (err, numReplaced) {
 								if (err) {
-									this.logMainMsg('Error in updating isprocessing flag in postOfflineRecordsToBackend Function' + err, 'error');
+									that.logMainMsg('Error in updating isprocessing flag in postOfflineRecordsToBackend Function' + err, 'error');
 									reject(err);
 								}
 								else {
@@ -3274,7 +3277,7 @@ sap.ui.define([
 						db.update({ _id: id, isSynced: false }, { $set: { isSynced: false, isPosted: false, isProcessing: false } },
 							function (err, numReplaced) {
 								if (err) {
-									this.logMainMsg('Error in updating isprocessing flag in postOfflineRecordsToBackend Function error block' + err, 'error');
+									that.logMainMsg('Error in updating isprocessing flag in postOfflineRecordsToBackend Function error block' + err, 'error');
 									reject(err);
 								}
 								else {
@@ -3282,7 +3285,7 @@ sap.ui.define([
 									resolve();
 								}
 							});
-						this.logMainMsg('Error in odata call  in postOfflineRecordsToBackend Function ' + err, 'error');
+						that.logMainMsg('Error in odata call  in postOfflineRecordsToBackend Function ' + err, 'error');
 					}
 
 				});
@@ -3399,7 +3402,7 @@ sap.ui.define([
 						})
 					}
 				}).fail((error) => {
-					reject(error)
+					reject(error);
 					this.logMainMsg('Error in the GeoCoordinates ajax call' + error, 'error');
 
 				})
@@ -3561,7 +3564,7 @@ sap.ui.define([
 			db.findOne({ module: 'EmployeeDetailSet' }, function (err, data) {
 				// console.log(data.EmployeeDetailSet[0].BusinessAreaId);
 				if (err) {
-					this.logMainMsg('Error in fetching the EmployeeDetailSet in getNonworkingDays function' + err, 'error');
+					that.logMainMsg('Error in fetching the EmployeeDetailSet in getNonworkingDays function' + err, 'error');
 
 				} else if (data) {
 					if (data.EmployeeDetailSet[0].BusinessAreaId === 'MCQT') {
