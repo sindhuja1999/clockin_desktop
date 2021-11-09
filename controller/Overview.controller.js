@@ -1700,7 +1700,7 @@ sap.ui.define([
 			oType.formatValue(new Date(), 'string');
 			db.find({ module: "TimeEventSetIndividual", EventDate: date1 }, function (err, data) {
 				if (err) {
-					this.logMainMsg('Error in fetching timeevents in getEvents' + err, 'error');
+					that.logMainMsg('Error in fetching timeevents in getEvents' + err, 'error');
 				}
 				else if (data) {
 					var oModel = new sap.ui.model.json.JSONModel();
@@ -2204,7 +2204,7 @@ sap.ui.define([
 													onlineProcessStarted = false;
 													await that.controlAppCloseFn(isProcessStarted, onlineProcessStarted); //Release the closing of app 
 													if (err) {
-														that.logMainMsg('Error in updating the isProcessing flag for synced records:-' + err, 'error');
+														that.logMainMsg('Error in updating the isProcessing flag for synced records in polling success block:-' + err, 'error');
 													}
 												});
 											},
@@ -3249,7 +3249,7 @@ sap.ui.define([
 						db.update({ _id: id, isSynced: false }, { $set: { isSynced: true, isPosted: false, isProcessing: false } },
 							function (err, numReplaced) {
 								if (err) {
-									this.logMainMsg('Error in updating isprocessing flag in postOfflineRecordsToBackend Function' + err, 'error');
+									that.logMainMsg('Error in updating isprocessing flag in postOfflineRecordsToBackend Function' + err, 'error');
 									reject(err);
 								}
 								else {
@@ -3263,7 +3263,7 @@ sap.ui.define([
 						db.update({ _id: id, isSynced: false }, { $set: { isSynced: false, isPosted: false, isProcessing: false } },
 							function (err, numReplaced) {
 								if (err) {
-									this.logMainMsg('Error in updating isprocessing flag in postOfflineRecordsToBackend Function error block' + err, 'error');
+									that.logMainMsg('Error in updating isprocessing flag in postOfflineRecordsToBackend Function error block' + err, 'error');
 									reject(err);
 								}
 								else {
@@ -3271,7 +3271,7 @@ sap.ui.define([
 									resolve();
 								}
 							});
-						this.logMainMsg('Error in odata call  in postOfflineRecordsToBackend Function ' + err, 'error');
+						that.logMainMsg('Error in odata call  in postOfflineRecordsToBackend Function ' + err, 'error');
 					}
 
 				});
@@ -3388,7 +3388,7 @@ sap.ui.define([
 						})
 					}
 				}).fail((error) => {
-					reject(error)
+					reject(error);
 					this.logMainMsg('Error in the GeoCoordinates ajax call' + error, 'error');
 
 				})
@@ -3586,7 +3586,7 @@ sap.ui.define([
 			db.findOne({ module: 'EmployeeDetailSet' }, function (err, data) {
 				// console.log(data.EmployeeDetailSet[0].BusinessAreaId);
 				if (err) {
-					this.logMainMsg('Error in fetching the EmployeeDetailSet in getNonworkingDays function' + err, 'error');
+					that.logMainMsg('Error in fetching the EmployeeDetailSet in getNonworkingDays function' + err, 'error');
 
 				} else if (data) {
 					if (data.EmployeeDetailSet[0].BusinessAreaId === 'MCQT') {
