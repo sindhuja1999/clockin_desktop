@@ -1,5 +1,6 @@
 const { app, BrowserWindow, Menu } = require('electron');
-
+var path = require('path');
+var log = require('electron-log');
 
 function differentUserWindow(userState) {
     let win = new BrowserWindow({
@@ -84,12 +85,24 @@ function differentUserWindow(userState) {
             submenu: [
 
                 {
-                    label: 'About',
+                    label: 'Learn More',
                     click: async () => {
                         const shell = require('electron').shell
                         shell.openExternal('https://helpfiles.med.cornell.edu/gm/PerformSearch?SO=rel&format=EU_SearchXML.shtml&mode=EU&illegals=&O1=any&MH=2000&visibletext=timeevents-Display&P1=timeevents%5C-Display')
                     }
-                }
+                },
+                {
+                    label: 'Support Log',
+                    click: async () => {
+                        const path = require('path');
+                        const shell = require('electron').shell
+                        shell.openPath(path.join(app.getPath('logs'), 'main.log'))
+                    }
+                },
+                {
+                    label: 'About',
+                    role: 'about'
+                },
             ]
         }
 
