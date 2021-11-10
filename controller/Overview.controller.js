@@ -44,7 +44,7 @@ sap.ui.define([
 	}
 	let syncclocktimer = 7200;
 	let isProcessStarted = false;
-	let isBackGroundProcessActive = false;
+	let onlineProcessStarted = false;
 	return BaseController.extend("edu.weill.Timeevents.controller.Overview", {
 		/* =========================================================== */
 		/* controller hooks                                            */
@@ -162,7 +162,6 @@ sap.ui.define([
 					fnReject();
 				}
 			).then(that.initCalendar(that.empID)).then(() => {
-				isBackGroundProcessActive = true;
 				that.syncOfflineRecordsToBackendForCurrentDay(new Date(), new Date(), new Date(), true)
 			}) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
 			// ).then(that.initCalendar(that.empID)).then(that.syncOfflineRecordsToBackendForCurrentDay(new Date(), new Date(), new Date(), true)) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
@@ -189,7 +188,7 @@ sap.ui.define([
 
 					//Check the status of the isProcessStarted flag to enable or disable the sync button based on the flag status.
 					syncVisibilityModel = new JSONModel({
-						syncVisibleFlag: !isProcessStarted
+						syncVisibleFlag: !(isProcessStarted || onlineProcessStarted)
 					});
 					that.getView().setModel(syncVisibilityModel, "syncVisibility");
 
@@ -815,7 +814,7 @@ sap.ui.define([
 			var self = this;
 			var oElements = [];
 			var that = this;
-			await self.controlAppClose(true) // Preventing the closing of app when the confirmation pop up opens
+			await self.controlAppCloseFn(true, onlineProcessStarted) // Preventing the closing of app when the confirmation pop up opens
 			let query = { module: 'GeoCoordinates' }
 			//Querying the local database for getting the saved geocoordinates
 			db.findOne(query, function (err, data) {
@@ -869,6 +868,8 @@ sap.ui.define([
 								if (isType === 'C') {
 									self.createTimeEvent();
 								} else if (isType === 'F') {
+									onlineProcessStarted = true; // Setting the onlineProcessStarted flag to true as it begins the online process.
+									self.controlAppCloseFn(isProcessStarted, onlineProcessStarted);
 									self.createTimeEventMob(true, selectedItem);
 								} else {
 									self._deleteEntry(selectedItem);
@@ -880,7 +881,7 @@ sap.ui.define([
 							text: self.oBundle.getText("cancel"),
 							press: async function () {
 								oConfirmDialog.close();
-								await self.controlAppClose(false) //Release the closing of app when the confirmation pop up closes
+								await self.controlAppCloseFn(isProcessStarted, onlineProcessStarted); //Release the closing of app when the confirmation pop up closes
 							}
 						})
 					}).addStyleClass("sapUiContentPadding sapUiMediumMarginTopBottom");
@@ -1585,11 +1586,11 @@ sap.ui.define([
 		onFlushButton: function () {
 			this.logMainMsg('onFlushButton function start', 'info');
 			if (this.selectedTab == "quickEntry" && !isProcessStarted) {
-				isProcessStarted = true;
+				// isProcessStarted = true;
 				this.syncOfflineRecordsToBackendForCurrentDay(new Date(), new Date(), new Date(), false) // Once the events get loaded and the calendar gets initialized, offline records synchronization will gets started.
 			}
 			else if (this.selectedTab == "eventList" && !isProcessStarted) {
-				isProcessStarted = true;
+				// isProcessStarted = true;
 				this.syncOfflineRecordsToBackendForCurrentDay(this.selectedDate, this.selectedDate, this.selectedDate, false)
 			}
 
@@ -1676,7 +1677,7 @@ sap.ui.define([
 		 * @public
 		 */
 		getEvents: function (date) {
-			this.logMainMsg('getEvents function start', 'info');
+			this.logMainMsg('getEvents function start' + date, 'info');
 			var that = this;
 			var dt = date;
 			var newDate = new Date(Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate()));
@@ -2037,7 +2038,6 @@ sap.ui.define([
 
 		createTimeEventMob: function (isFav, customData) {
 			this.logMainMsg('createTimeEventMob function start', 'info');
-			var oServiceURI = this.getOwnerComponent().getMetadata().getManifestEntry("sap.app").dataSources["timeEventService"].uri;
 			var latitude, longitude;
 			var that = this;
 			var date = new Date();
@@ -2046,6 +2046,8 @@ sap.ui.define([
 			db.findOne(query, function (err, data) {
 				if (err) {
 					that.logMainMsg('Error in identifying the geocoordinates in createTimeEventMob Function' + err, 'error');
+					onlineProcessStarted = false; // Making it false as the metadata is not loaded.
+					that.controlAppCloseFn(isProcessStarted, onlineProcessStarted);
 				} else if (data) {
 					latitude = data.latitude;
 					longitude = data.longitude;
@@ -2126,10 +2128,10 @@ sap.ui.define([
 					db.insert({ module: 'TimeEventSetIndividual', isSynced: false, isPosted: false, ...obj }, async function (err, entities) {
 						if (err) {
 							that.logMainMsg('Inserting the timeevents in createTimeEventMob Function error:-' + err, 'error');
+							onlineProcessStarted = false; // Making it false as the metadata is not loaded.
+							that.controlAppCloseFn(isProcessStarted, onlineProcessStarted);
 						} else if (entities) {
 							that.busyDialog.close();
-							//Online record creation attempt
-							// if (navigator.onLine || 1) {
 							let payload = entities;
 							let id = payload._id;
 							delete payload.module;
@@ -2140,46 +2142,45 @@ sap.ui.define([
 
 							//>>>> Check if the Sync In Process Flag is in Progress and then call to Server
 							//- If Online, Call to Server 
-							// if (!isProcessStarted && navigator.onLine) {
-							if (!isBackGroundProcessActive && navigator.onLine) {
-								// if (0 && navigator.onLine) {
+
+							//If Background process is not active & the app is online
+							if (!isProcessStarted && navigator.onLine) {
 
 								//Adding isProcessing Flag to indicate that the record is being in the process of syncing to backend.
 								db.update({ _id: id }, { $set: { isProcessing: true } }, function (err, numReplaced) {
 									if (err) {
 										that.logMainMsg('Updating the timeevents isProcessing Flag  error:-' + err, 'error');
+										onlineProcessStarted = false; // Making it false as the metadata is not loaded.
+										that.controlAppCloseFn(isProcessStarted, onlineProcessStarted);
 									}
 									else if (numReplaced) {
-										// isProcessStarted = true;
-
 										if (that.oDataModel1.getServiceMetadata() === undefined) {
 											that.logMainMsg('Service Offline or Metadata failed to load', 'info');
-											isProcessStarted = false;
-											that.controlAppClose(false);
+											onlineProcessStarted = false; // Making it false as the metadata is not loaded.
+											that.controlAppCloseFn(isProcessStarted, onlineProcessStarted);
 										} else if (that.oDataModel1.getServiceMetadata()) {
 											that.oDataModel1.create("/TimeEventSet", payload, {
 												success: async function (oData, oResponse) {
 													// await new Promise((resolve, reject) => {
 													//Updating the isProcessing Flag to indicate that the record is processed.
-													isProcessStarted = false;
-													await that.controlAppClose(false); //Release the closing of app 
-													db.update({ _id: id, isSynced: false }, { $set: { isSynced: true, isPosted: false, isProcessing: false } }, function (err, numReplaced) {
+													db.update({ _id: id, isSynced: false }, { $set: { isSynced: true, isPosted: false, isProcessing: false } }, async function (err, numReplaced) {
+														onlineProcessStarted = false; // Making it false inside the success block
+														await that.controlAppCloseFn(isProcessStarted, onlineProcessStarted)
 														if (err) {
 															that.logMainMsg('Error in updating the isProcessing flag for synced records:-' + err, 'error');
 														}
 													});
-													// })
+
 												},
 												error: async function (err) {
-													isProcessStarted = false;
-													await that.controlAppClose(false); //Release the closing of app 
 													//Updating the isProcessing Flag to indicate that the record is processed.
-													db.update({ _id: id, isSynced: false }, { $set: { isProcessing: false } },
-														function (err, numReplaced) {
-															if (err) {
-																that.logMainMsg('Error in updating the isProcessing flag for synced records in error block:-' + err, 'error');
-															}
-														});
+													db.update({ _id: id, isSynced: false }, { $set: { isProcessing: false } }, async function (err, numReplaced) {
+														onlineProcessStarted = false; // Making it false inside the error block
+														await that.controlAppCloseFn(isProcessStarted, onlineProcessStarted); //Release the closing of app 
+														if (err) {
+															that.logMainMsg('Error in updating the isProcessing flag for synced records in error block:-' + err, 'error');
+														}
+													});
 												}
 
 											});
@@ -2187,9 +2188,8 @@ sap.ui.define([
 
 									}
 								})
-								// } else if (isProcessStarted && navigator.onLine) {
-							} else if (isBackGroundProcessActive && navigator.onLine) {
-								//Poll process starts here for every two secnods and 30 retries
+							} else if (isProcessStarted && navigator.onLine) {
+								//Poll process starts here for every two seconds and 30 retries
 								const poll_interval = 2000;
 								const maxAttempts = 30;
 
@@ -2199,26 +2199,24 @@ sap.ui.define([
 											success: async function (oData, oResponse) {
 												// await new Promise((resolve, reject) => {
 												//Updating the isProcessing Flag to indicate that the record is processed.
-												isProcessStarted = false;
-												await that.controlAppClose(false); //Release the closing of app 
-												db.update({ _id: id, isSynced: false }, { $set: { isSynced: true, isPosted: false, isProcessing: false } }, function (err, numReplaced) {
-													resolve();
+
+												db.update({ _id: id, isSynced: false }, { $set: { isSynced: true, isPosted: false, isProcessing: false } }, async function (err, numReplaced) {
+													onlineProcessStarted = false;
+													await that.controlAppCloseFn(isProcessStarted, onlineProcessStarted); //Release the closing of app 
 													if (err) {
 														that.logMainMsg('Error in updating the isProcessing flag for synced records in polling success block:-' + err, 'error');
 													}
 												});
-												// })
 											},
 											error: async function (err) {
-												isProcessStarted = false;
-												await that.controlAppClose(false); //Release the closing of app 
 												//Updating the isProcessing Flag to indicate that the record is processed.
-												db.update({ _id: id, isSynced: false }, { $set: { isProcessing: false } },
-													function (err, numReplaced) {
-														if (err) {
-															that.logMainMsg('Error in updating the isProcessing flag for synced records in polling error block:-' + err, 'error');
-														}
-													});
+												db.update({ _id: id, isSynced: false }, { $set: { isProcessing: false } }, async function (err, numReplaced) {
+													onlineProcessStarted = false;
+													await that.controlAppCloseFn(isProcessStarted, onlineProcessStarted); //Release the closing of app 
+													if (err) {
+														this.logMainMsg('Error in updating the isProcessing flag for synced records in polling error block:-' + err, 'error');
+													}
+												});
 											}
 
 										});
@@ -2241,12 +2239,10 @@ sap.ui.define([
 											// let myresult = await nxtFn(payload, id);
 											return resolve(myresult);
 										} else if (maxAttempts && attempts === maxAttempts) {
-											isProcessStarted = false
-											await that.controlAppClose(false);
+											onlineProcessStarted = false;
+											await that.controlAppCloseFn(isProcessStarted, onlineProcessStarted);
 											return reject(new Error('Exceeded max attempts'));
 										} else {
-											isProcessStarted = true;
-											await that.controlAppClose(true);
 											setTimeout(executePoll, interval, resolve, reject);
 										}
 									};
@@ -2262,8 +2258,7 @@ sap.ui.define([
 								//Check whether the background process is in active/inactive state.
 								const backGroundProcessCheck = async () => {
 									let resp = await new Promise(resolve => {
-										// resolve(isProcessStarted);
-										resolve(isBackGroundProcessActive);
+										resolve(isProcessStarted);
 									});
 									return resp;
 								}
@@ -2278,13 +2273,11 @@ sap.ui.define([
 									.catch(err => that.logMainMsg('Error in poll Function' + err, 'error'));
 								//New Poll Process Ends.
 							} else if (!navigator.onLine) {
-								isProcessStarted = false;
-								await that.controlAppClose(false); //Release the closing of app 
-								that.logMainMsg('System is offline, will process the records once it is online ..', 'info');								
+								onlineProcessStarted = false;
+								await that.controlAppCloseFn(isProcessStarted, onlineProcessStarted); //Release the closing of app 
+								that.logMainMsg('System is offline, will process the records once it is online ..', 'info');
 							}
 
-							// }
-							//Online record creation attempt end
 							that.hideBusy();
 							var toastMsg = that.oBundle.getText("timeEventCreated");
 							sap.m.MessageToast.show(toastMsg, {
@@ -2813,27 +2806,23 @@ sap.ui.define([
 			var that = this;
 			let offlinerecords;
 			if (oldRecordsSyncFlag) {
-				// offlinerecords = this.offlineevents;
-				offlinerecords = JSON.parse(localStorage.getItem('nonsyncedrecords'));
-			} else if (!oldRecordsSyncFlag) {
+				offlinerecords = JSON.parse(localStorage.getItem('nonsyncedrecords'));//Fetch the offline non-synced records from localstorage(reading in index.html page)
+			} else if (!oldRecordsSyncFlag && !onlineProcessStarted) {
 				offlinerecords = await this.fetchRecordsFromLocalDb(firstDay, '', false);// fetch the offline non synced records from the local database.
 			}
-			// let offlinerecords = await this.fetchRecordsFromLocalDb(firstDay, '', false);// fetch the offline non synced records from the local database.
-			if (navigator.onLine) {
+
+			if (navigator.onLine && !isProcessStarted) {
 				that.byId("calendar").setBusy(true);
+				//App Close Prevented by passing the true flag from the api to the electron app.
+				// 	>>>> Set Sync Flag as in Process and see if the Window Close can disable
+				isProcessStarted = true;
+				await this.controlAppCloseFn(isProcessStarted, onlineProcessStarted); // isProcessStarted value becomes true.
 				if (offlinerecords.length) {
 					try {
 						let geodata = await this.getGeoCoordinates();
-						// 	>>>> Set Sync Flag as in Process and see if the Window Close can disable
-						isProcessStarted = true;
-						//App Close Prevented by passing the true flag from the api to the electron app.
-						await this.controlAppClose(isProcessStarted); // isProcessStarted value becomes true.
-
-						let offlinerecordstoupdate = [], offlinerecordstopush = [];
+						let offlinerecordstoupdate = [], offlinerecordstopush = []; //Initializing empty arrays to identify synced and true offline records.
 						let onlinerecords = await this.fetchOnlineRecordsUsingAjaxCall(firstDay, lastDay); //fetching the online records for the current day, both parameters are same
-						//Comparing with CUSTOMER06 Field rather than using Terminal Id.
-						offlinerecordstoupdate = onlinerecords.filter(o1 => offlinerecords.some(o2 => (o1.CUSTOMER06 == o2.CUSTOMER06)))
-
+						offlinerecordstoupdate = onlinerecords.filter(o1 => offlinerecords.some(o2 => (o1.CUSTOMER06 == o2.CUSTOMER06)))//Comparing with CUSTOMER06 Field for already posted records.
 
 						let updateLocalDbRecordsArray = [];
 						if (offlinerecordstoupdate.length) {
@@ -2852,19 +2841,17 @@ sap.ui.define([
 
 						}
 
-						// try {
-						let onlinerecordsToDelete = await this.fetchRecordsFromLocalDb(firstDay, '', true);
+						let onlinerecordsToDelete = await this.fetchRecordsFromLocalDb(firstDay, '', true);//Get the already synced records from localdb to delete in later phase.
 						let updatedResponse = await Promise.all(updateLocalDbRecordsArray);
 						let insertedResponse = await Promise.all(postOfflineRecordsArray);
-						isProcessStarted = false;
-						await this.controlAppClose(isProcessStarted); // isProcessStarted value becomes false.
+						//Removing the isProcessStarted flag value to false here based on new changes.
 						//Make use of the response received in the previous calls rather than making a call again.
 						that.replaceSyncedRecordsInLocalDbUsingAjaxCallForCurrentDay(firstDay, thirdDay, onlinerecords, onlinerecordsToDelete, oldRecordsSyncFlag)
 					} catch (error) {
-						isProcessStarted = false;
 						that.byId("calendar").setBusy(false);
-						await this.controlAppClose(isProcessStarted);
-						isBackGroundProcessActive = false;
+						console.log('isProcessStarted made false in catch block of offline records')
+						isProcessStarted = false;
+						await this.controlAppCloseFn(isProcessStarted, onlineProcessStarted);
 						this.logMainMsg('Error in resolving syncOfflineRecordsToBackendForCurrentDay Function' + error, 'error');
 					}
 
@@ -2873,30 +2860,22 @@ sap.ui.define([
 				}
 				else if (offlinerecords.length === 0) {
 					try {
-						isProcessStarted = true;
-						await this.controlAppClose(isProcessStarted);// isProcessStarted value becomes true.
+
 						//Fetching records for Current Day
 						let onlineRecords = await this.fetchOnlineRecordsUsingAjaxCall(firstDay, lastDay);
 
-						//Resuming the app close parameter to false after the api call is done.
-						isProcessStarted = false;
-						await this.controlAppClose(isProcessStarted); // isProcessStarted value becomes false.
 						let onlinerecordsToDelete = await this.fetchRecordsFromLocalDb(firstDay, '', true);
 						that.replaceSyncedRecordsInLocalDbUsingAjaxCallForCurrentDay(firstDay, thirdDay, onlineRecords, onlinerecordsToDelete, oldRecordsSyncFlag)
 					} catch (error) {
-						isProcessStarted = false;
 						that.byId("calendar").setBusy(false);
-						await this.controlAppClose(isProcessStarted); // isProcessStarted value becomes false.
-						isBackGroundProcessActive = false;
+						isProcessStarted = false;
+						await this.controlAppCloseFn(isProcessStarted, onlineProcessStarted); // isProcessStarted value becomes false.
 						this.logMainMsg('Error in syncOfflineRecordsToBackendForCurrentDay Function catch block' + error, 'error');
 					}
 				}
 			}
 			else if (!navigator.onLine) {
-				isBackGroundProcessActive = false;
-				isProcessStarted = false;
-				await this.controlAppClose(isProcessStarted);
-				this.logMainMsg('isBackGroundProcessActive made false, System is in offline mode', 'info');
+				this.logMainMsg('System is in offline mode', 'info');
 			}
 			this.logMainMsg('syncOfflineRecordsToBackendForCurrentDay function complete', 'info');
 		},
@@ -2915,15 +2894,15 @@ sap.ui.define([
 				if (offlineRecords.length) {
 					let offlineRecordsForParticularDay = offlineRecords.filter(o1 => o1.EventDate == dateSelected)
 					let convertedDate = new Date(parseInt(dateSelected.substring(6, dateSelected.length - 2)))
+					convertedDate = new Date(convertedDate);
+					convertedDate = new Date(convertedDate.getUTCFullYear(), convertedDate.getUTCMonth(), convertedDate.getUTCDate())
 
 					if (offlineRecordsForParticularDay.length) {
-						isProcessStarted = true;
 						let offlinerecordstoupdate = [], offlinerecordstopush = [];
-						let onlinerecords = await this.fetchOnlineRecordsUsingAjaxCall(convertedDate, convertedDate); //fetching the online records for the current day, both parameters are same
+						let onlinerecords = await this.fetchOnlineRecordsUsingAjaxCall(convertedDate, convertedDate); //fetching the online records for the date passed, both parameters are same
 
 						// offlinerecordstoupdate = onlinerecords.filter(o1 => offlineRecordsForParticularDay.some(o2 => (o1.TerminalId == o2.TerminalId)))
 						offlinerecordstoupdate = onlinerecords.filter(o1 => offlineRecordsForParticularDay.some(o2 => (o1.CUSTOMER06 == o2.CUSTOMER06)))
-
 
 						let updateLocalDbRecordsArray = [];
 						if (offlinerecordstoupdate.length) {
@@ -2935,6 +2914,7 @@ sap.ui.define([
 
 						// offlinerecordstopush = offlineRecordsForParticularDay.filter(o1 => !onlinerecords.some(o2 => (o2.TerminalId && o1.TerminalId == o2.TerminalId)))
 						offlinerecordstopush = offlineRecordsForParticularDay.filter(o1 => !onlinerecords.some(o2 => (o2.CUSTOMER06 && o1.CUSTOMER06 == o2.CUSTOMER06)))
+
 						let postOfflineRecordsArray = [];
 						if (offlinerecordstopush) {
 							for (let record of offlinerecordstopush) {
@@ -2999,16 +2979,18 @@ sap.ui.define([
 				}
 			}
 			try {
-				isProcessStarted = true;
-				await this.controlAppClose(isProcessStarted); // isProcessStarted value becomes true.
+
 
 				let handleOldRecordsDayWise = await Promise.all(handleOldRecordsDayWiseArray);
 
 				isProcessStarted = false;
-				await this.controlAppClose(isProcessStarted); // isProcessStarted value becomes false.
+				console.log('isProcessStarted made false here')
+				await that.controlAppCloseFn(isProcessStarted, onlineProcessStarted); // isProcessStarted value becomes false.
 
 			} catch (error) {
-				this.logMainMsg('Error in resolving the promises inside syncOldestOfflineRecords function' + error, 'error');
+				isProcessStarted = false;
+				await that.controlAppCloseFn(isProcessStarted, onlineProcessStarted);
+				that.logMainMsg('Error in resolving the promises inside syncOldestOfflineRecords function' + error, 'error');
 			}
 		},
 
@@ -3115,6 +3097,7 @@ sap.ui.define([
 		 */
 		fetchOnlineRecordsUsingAjaxCall: async function (fromDate, toDate) {
 			this.logMainMsg('fetchOnlineRecordsUsingAjaxCall function start', 'info');
+			console.log('FromDate==>', fromDate, 'toDate ===>', toDate);
 			let now = new Date(fromDate.getTime() - fromDate.getTimezoneOffset() * 60000).toISOString().replace('Z', '')
 			let then = new Date(toDate.getTime() - toDate.getTimezoneOffset() * 60000).toISOString().replace('Z', '')
 			let oServiceURI = this.getOwnerComponent().getMetadata().getManifestEntry("sap.app").dataSources["timeEventService"].uri;
@@ -3203,21 +3186,24 @@ sap.ui.define([
 			try {
 				let removedElements = await Promise.all(removeElementsArray);
 				let insertElements = await insertElementsInLocalDb(insertElementsArray);
-				console.log('isBackGroundProcessActive made false in try block')
-				isBackGroundProcessActive = false;
+
+
 				that.getEvents(thirdDay);
 				//Call Synchronize all offline records after done with the current day.
-				// that.synchronizeAllOfflineRecords()
 				if (oldRecordsSyncFlag) {
 					that.syncOldestOfflineRecords();
 				}
+				else {
+					isProcessStarted = false;
+					await this.controlAppCloseFn(isProcessStarted, onlineProcessStarted);
+				}
 				that.byId('calendar').setBusy(false);
 			} catch (error) {
-				isBackGroundProcessActive = false;
-				that.logMainMsg('isBackGroundProcessActive made false, Error in replacing the records' + error, 'error');
+				//Added the isProcessStarted flag here to set to false in case of errors
+				isProcessStarted = false;
+				await this.controlAppCloseFn(isProcessStarted, onlineProcessStarted);
+				this.logMainMsg('isProcessStarted made false, Error in replacing the records' + error, 'error');
 			}
-
-			// Avoiding API Call ends
 
 		},
 
@@ -3411,7 +3397,7 @@ sap.ui.define([
 		},
 
 		/**
-		 * @description Api Call to change the closeFlag status based on the parameter passed in the electron side.
+		 * @description Api Call to change the closeFlag status based on the parameter passed in the electron side.- Not in use.
 		 * @param {Boolean} closeFlag - True or false value which is used to determine the app close functionality
 		 * @returns 
 		 */
@@ -3434,6 +3420,41 @@ sap.ui.define([
 			})
 		},
 
+		/**
+		 * @description Function which uses electron api to control the app close based on the flag passed.
+		 * @param {Boolean} backgroundProcess - Boolean flag to indicate the background process has started.
+		 * @param {Boolean} onlineProcess - Boolean flag to indicate the online process has started.
+		 * @returns 
+		 */
+		controlAppCloseFn: function (backgroundProcess, onlineProcess) {
+			let closeFlag = false;
+			if (backgroundProcess || onlineProcess) {
+				closeFlag = true;
+			}
+			console.log('closeFlag-->', closeFlag, 'backgroundProcess-->', backgroundProcess, 'onlineProcess-->', onlineProcess)
+			return new Promise((resolve, reject) => {
+				$.ajax({
+					type: "POST",
+					url: "http://localhost:5858/change-value",
+					data: {
+						"closeFlag": closeFlag
+					},
+					dataType: "json"
+				}).done(function (response) {
+					resolve(response)
+				}).fail(function (error) {
+					this.logMainMsg('Error in the controlAppClose ajax call' + error, 'error');
+					reject(error);
+				})
+
+			})
+		},
+
+		/**
+		 * @description Logger functionality api to write logs into log file via electron api's.
+		 * @param {String} logmsg -log message 
+		 * @param {String} logType - Type of log Ex:- info, error, warn
+		 */
 		logMainMsg: function (logmsg, logType) {
 			$.ajax({
 				type: "POST",
@@ -3446,6 +3467,7 @@ sap.ui.define([
 			}).done().fail(function (error) {
 				console.log('Error in the logMainMsg ajax call of logMainMsg function' + error);
 			})
+			// console.log('logMsg', logmsg, 'logType', logType)
 		},
 
 		/* =========================================================== */
