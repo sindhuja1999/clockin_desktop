@@ -28,14 +28,14 @@ function createAppWindow() {
     {
       label: 'View',
       submenu: [
-        {
-          label: 'Reload',
-          role: 'reload'
-        },
-        {
-          label: 'Force Reload',
-          role: 'forceReload'
-        },
+        // {
+        //   label: 'Reload',
+        //   role: 'reload'
+        // },
+        // {
+        //   label: 'Force Reload',
+        //   role: 'forceReload'
+        // },
         {
           label: 'Actual Size',
           role: 'resetZoom'
