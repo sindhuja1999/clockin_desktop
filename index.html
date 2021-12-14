@@ -295,6 +295,7 @@
       localStorage.setItem('token', atob(response.accessToken))
       localStorage.setItem('refreshtoken', atob(response.refreshToken))
       localStorage.setItem('osHostName', response.osHostName)
+      localStorage.setItem('appVersion', response.appVersion)
       loadUIComponent(atob(response.accessToken), atob(response.refreshToken));
       // mysync()
    })

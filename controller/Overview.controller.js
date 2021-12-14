@@ -2079,6 +2079,7 @@ sap.ui.define([
 						var punchType = timeType + timeStampToAppend;
 						timezoneOffset = timezoneOffset.toFixed(2);
 						let oshostname = localStorage.getItem('osHostName');
+						let appVersion = localStorage.getItem('appVersion');
 						var lat = latitude.toString();
 						var longit = longitude.toString();
 						let randomString = that.getRandomString(4)
@@ -2094,6 +2095,7 @@ sap.ui.define([
 							CUSTOMER05: appStatus.length > 20 ? appStatus.substring(0, 20) : appStatus,
 							CUSTOMER06: punchType.length > 20 ? punchType.substring(0, 20) : punchType,
 							CUSTOMER07: oshostname.length > 20 ? oshostname.substring(0, 20) : oshostname,
+							CUSTOMER08: appVersion.length > 20 ? appVersion.substring(0, 20) : appVersion,
 							AddTerminalID: randomString,
 							TerminalId: randomString,
 							Note: punchType.length > 20 ? punchType.substring(0, 20) : punchType
